@@ -16,15 +16,25 @@ import { formatRp } from "./format";
 
 const ROUND_ORDER: GameState["round"][] = ["preflop", "flop", "turn", "river"];
 
+// Smallest legal bet/raise increment (one chip) used when there are no blinds.
+export const MIN_BET = 100;
+
+// Minimum bet/raise increment for a round given the big blind.
+function minRaiseFor(bigBlind: number): number {
+  return Math.max(bigBlind, MIN_BET);
+}
+
 export interface GameConfig {
   smallBlind: number;
   bigBlind: number;
   buyIn: number;
 }
 
+// Default: no forced blinds — the pot starts at 0 and players build the bet
+// themselves. Host can change blinds before a hand if they want antes/blinds.
 export const DEFAULT_CONFIG: GameConfig = {
-  smallBlind: 1000,
-  bigBlind: 2000,
+  smallBlind: 0,
+  bigBlind: 0,
   buyIn: 100000,
 };
 
@@ -41,7 +51,7 @@ export function initialState(hostId: string, config: GameConfig = DEFAULT_CONFIG
     buyIn: config.buyIn,
     pot: 0,
     currentBet: 0,
-    minRaise: config.bigBlind,
+    minRaise: minRaiseFor(config.bigBlind),
     round: "preflop",
     toActSeat: null,
     lastAggressorSeat: null,
@@ -168,7 +178,7 @@ function advanceStreet(s: GameState): void {
     }
   }
   s.currentBet = 0;
-  s.minRaise = s.bigBlind;
+  s.minRaise = minRaiseFor(s.bigBlind);
   s.lastAggressorSeat = null;
   const first = nextSeatMatching(s, s.dealerSeat, canAct);
   s.toActSeat = first;
@@ -233,7 +243,7 @@ function startHand(s: GameState): void {
   s.handId += 1;
   s.pot = 0;
   s.currentBet = 0;
-  s.minRaise = s.bigBlind;
+  s.minRaise = minRaiseFor(s.bigBlind);
   s.round = "preflop";
   s.winners = [];
   s.lastPot = 0;
@@ -253,6 +263,7 @@ function startHand(s: GameState): void {
     const p = getBySeat(s, seat);
     if (!p) return;
     const pay = Math.min(amount, p.stack);
+    if (pay <= 0) return; // no blinds configured — nothing to post
     p.stack -= pay;
     p.committed += pay;
     p.totalCommitted += pay;
@@ -285,7 +296,7 @@ function startHand(s: GameState): void {
   }
 
   s.currentBet = s.bigBlind;
-  s.minRaise = s.bigBlind;
+  s.minRaise = minRaiseFor(s.bigBlind);
   s.lastAggressorSeat = bbSeat;
 
   // If the first-to-act seat can't act (e.g. all-in from blinds), resolve.
@@ -469,7 +480,7 @@ export function reduce(state: GameState, action: Action): GameState {
       s.smallBlind = Math.max(0, Math.round(action.smallBlind));
       s.bigBlind = Math.max(s.smallBlind, Math.round(action.bigBlind));
       s.buyIn = Math.max(0, Math.round(action.buyIn));
-      s.minRaise = s.bigBlind;
+      s.minRaise = minRaiseFor(s.bigBlind);
       addLog(s, `Blind ${formatRp(s.smallBlind)}/${formatRp(s.bigBlind)}, buy-in ${formatRp(s.buyIn)}.`);
       break;
     }

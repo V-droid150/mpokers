@@ -56,6 +56,7 @@ export default function BetControls({ state, myId, isHost, dispatch }: BetContro
 
   const trayAmount = Math.max(0, pending - me.committed);
   const isAllInRaise = pending >= la.maxRaiseTo;
+  const isOpenBet = state.currentBet === 0; // no bet yet -> "Bet" rather than "Raise"
   const dealtCount = state.players.filter((p) => !p.sittingOut && p.stack > 0).length;
 
   // ---------- LOBBY / HANDOVER: host controls ----------
@@ -162,7 +163,7 @@ export default function BetControls({ state, myId, isHost, dispatch }: BetContro
           <div className="mb-2 flex items-end justify-between">
             <div>
               <div className="text-[11px] uppercase tracking-widest text-stone-400">
-                {isAllInRaise ? "All-in" : "Raise ke"}
+                {isAllInRaise ? "All-in" : isOpenBet ? "Taruh" : "Raise ke"}
               </div>
               <div className="text-2xl font-bold text-vegas-gold tabular-nums leading-none">
                 {formatRp(pending)}
@@ -257,7 +258,9 @@ export default function BetControls({ state, myId, isHost, dispatch }: BetContro
           disabled={!la.canRaise}
           className="rounded-2xl bg-gradient-to-b from-vegas-gold to-vegas-goldsoft py-4 font-bold text-black shadow-gold transition active:scale-[0.97] disabled:opacity-40"
         >
-          {isAllInRaise ? "All-in" : `Raise ${formatShort(pending)}`}
+          {isAllInRaise
+            ? "All-in"
+            : `${isOpenBet ? "Bet" : "Raise"} ${formatShort(pending)}`}
         </button>
       </div>
     </div>

@@ -3,14 +3,18 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import { DEFAULT_CONFIG, initialState, legalActions, reduce } from "./engine";
+import type { GameConfig } from "./engine";
 import type { GameState } from "./types";
+
+// Most betting-mechanics tests use explicit blinds so the numbers are concrete.
+const BLINDS: GameConfig = { smallBlind: 1000, bigBlind: 2000, buyIn: 100000 };
 
 function seat(s: GameState, i: number) {
   return s.players.find((p) => p.seat === i)!;
 }
 
-function withPlayers(n: number): GameState {
-  let s = initialState("host", DEFAULT_CONFIG); // SB 1000 / BB 2000, buy-in 100000
+function withPlayers(n: number, config: GameConfig = BLINDS): GameState {
+  let s = initialState("host", config);
   for (let i = 0; i < n; i++) {
     s = reduce(s, { type: "JOIN", playerId: `p${i}`, name: `P${i}` });
   }
@@ -94,6 +98,31 @@ test("all-in call drives the hand to showdown, host awards the pot", () => {
   assert.equal(s.status, "handover");
   assert.equal(seat(s, 1).stack, 200000);
   assert.equal(seat(s, 0).stack, 0);
+});
+
+test("default config has no blinds: pot starts at 0 and players can check", () => {
+  // DEFAULT_CONFIG is 0/0 — no forced bets.
+  let s = reduce(withPlayers(3, DEFAULT_CONFIG), { type: "START_HAND" });
+  assert.equal(s.pot, 0);
+  assert.equal(s.currentBet, 0);
+  // First to act can check (nothing to call) and opening bet minimum is one chip.
+  const la = legalActions(s, "p0");
+  assert.equal(la.canCheck, true);
+  assert.equal(la.minRaiseTo, 100); // MIN_BET
+  // Everyone checks around -> advances to the flop with an empty pot.
+  s = reduce(s, { type: "CHECK", playerId: "p0" });
+  s = reduce(s, { type: "CHECK", playerId: "p1" });
+  s = reduce(s, { type: "CHECK", playerId: "p2" });
+  assert.equal(s.round, "flop");
+  assert.equal(s.pot, 0);
+});
+
+test("with no blinds a player can open a bet built from zero", () => {
+  let s = reduce(withPlayers(3, DEFAULT_CONFIG), { type: "START_HAND" });
+  s = reduce(s, { type: "RAISE", playerId: "p0", total: 500 }); // opening bet
+  assert.equal(s.currentBet, 500);
+  assert.equal(s.pot, 500);
+  assert.equal(seat(s, 0).committed, 500);
 });
 
 test("next hand rotates the dealer button", () => {
