@@ -1,0 +1,106 @@
+"use client";
+
+import { motion } from "framer-motion";
+import type { GameState } from "@/lib/types";
+import { formatRp } from "@/lib/format";
+import PlayerSeat from "./PlayerSeat";
+import ChipStack from "./ChipStack";
+
+interface PokerTableProps {
+  state: GameState;
+  myId: string;
+}
+
+const ROUND_LABEL: Record<GameState["round"], string> = {
+  preflop: "Pre-flop",
+  flop: "Flop",
+  turn: "Turn",
+  river: "River",
+};
+
+// Position `count` seats around an ellipse, starting at bottom-centre and going
+// clockwise. Returns percentage coordinates for absolute placement.
+function seatPositions(count: number): { x: number; y: number }[] {
+  const RX = 47;
+  const RY = 41;
+  const positions: { x: number; y: number }[] = [];
+  for (let i = 0; i < count; i++) {
+    const deg = 90 - (360 / count) * i;
+    const rad = (deg * Math.PI) / 180;
+    positions.push({
+      x: 50 + RX * Math.cos(rad),
+      y: 50 + RY * Math.sin(rad),
+    });
+  }
+  return positions;
+}
+
+export default function PokerTable({ state, myId }: PokerTableProps) {
+  const sorted = [...state.players].sort((a, b) => a.seat - b.seat);
+  const meIdx = sorted.findIndex((p) => p.id === myId);
+
+  // Rotate so the local player sits at the bottom-centre.
+  const ordered =
+    meIdx >= 0 ? [...sorted.slice(meIdx), ...sorted.slice(0, meIdx)] : sorted;
+  const positions = seatPositions(Math.max(ordered.length, 1));
+
+  const inHand = state.status === "playing" || state.status === "showdown";
+
+  return (
+    <div className="relative mx-auto aspect-[3/4] w-full max-w-md">
+      {/* Felt */}
+      <div className="felt-surface absolute inset-3 rounded-[44%]" />
+
+      {/* Centre: pot + round info */}
+      <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1">
+        {inHand && (
+          <span className="rounded-full bg-black/40 px-3 py-0.5 text-[11px] font-semibold uppercase tracking-widest text-vegas-gold/90">
+            {ROUND_LABEL[state.round]}
+          </span>
+        )}
+        <ChipStack amount={state.pot} size={30} label={false} layoutId="pot" />
+        <div className="rounded-full border border-vegas-gold/40 bg-black/50 px-4 py-1 text-center">
+          <div className="text-[10px] uppercase tracking-widest text-stone-300">Pot</div>
+          <div className="text-lg font-bold text-vegas-gold tabular-nums leading-none">
+            {formatRp(state.pot)}
+          </div>
+        </div>
+        {inHand && state.currentBet > 0 && (
+          <span className="text-[11px] text-stone-300">
+            Taruhan: <span className="font-semibold text-white">{formatRp(state.currentBet)}</span>
+          </span>
+        )}
+        {state.status === "showdown" && (
+          <motion.span
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="mt-1 rounded-full bg-vegas-red px-3 py-0.5 text-[11px] font-bold uppercase tracking-wide text-white"
+          >
+            Showdown
+          </motion.span>
+        )}
+      </div>
+
+      {/* Seats */}
+      {ordered.map((player, i) => {
+        const pos = positions[i];
+        return (
+          <div
+            key={player.id}
+            className="absolute -translate-x-1/2 -translate-y-1/2"
+            style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
+          >
+            <PlayerSeat
+              player={player}
+              isMe={player.id === myId}
+              isDealer={inHand && player.seat === state.dealerSeat}
+              isToAct={state.status === "playing" && state.toActSeat === player.seat}
+              isWinner={state.status === "handover" && state.winners.includes(player.seat)}
+              blind={null}
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
