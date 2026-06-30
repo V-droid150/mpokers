@@ -52,19 +52,19 @@ export default function PlayerSeat({
           className="rounded-full"
         >
           <div
-            className={`relative flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold ${
+            className={`relative flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold ${
               isMe || isWinner ? "bg-vegas-gold text-black" : "bg-felt text-white"
             }`}
-            style={{ boxShadow: "inset 0 -3px 6px rgba(0,0,0,0.4)" }}
+            style={{ boxShadow: "inset 0 -2px 5px rgba(0,0,0,0.4)" }}
           >
             {initials(player.name)}
             {isDealer && (
-              <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-white text-[10px] font-black text-black shadow">
+              <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-white text-[8px] font-black text-black shadow">
                 D
               </span>
             )}
             {blind && (
-              <span className="absolute -left-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-vegas-purple px-1 text-[9px] font-bold text-white shadow">
+              <span className="absolute -left-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-vegas-purple px-1 text-[8px] font-bold text-white shadow">
                 {blind}
               </span>
             )}
