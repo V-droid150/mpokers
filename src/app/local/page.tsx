@@ -102,7 +102,10 @@ function SetupMenu({
       <header className="mb-6 text-center">
         <div className="mb-1 text-4xl">🎰</div>
         <h1 className="font-display text-3xl font-black text-foil">Set Up Table</h1>
-        <p className="mt-1 text-xs text-stone-400">
+        <p
+          className="mt-1 text-xs text-stone-200"
+          style={{ textShadow: "0 1px 4px rgba(0,0,0,0.85)" }}
+        >
           Single-device play — pass the phone each turn.
         </p>
       </header>

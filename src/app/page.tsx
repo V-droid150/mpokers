@@ -37,7 +37,10 @@ export default function HomePage() {
       <MenuBackground />
       <header className="text-center">
         <BrandMark />
-        <p className="mt-3 text-sm text-stone-400">
+        <p
+          className="mt-3 text-sm text-stone-200"
+          style={{ textShadow: "0 1px 4px rgba(0,0,0,0.85)" }}
+        >
           Cardless poker — manage chips &amp; bets. Vegas style, up to 8 players.
         </p>
       </header>
@@ -112,10 +115,11 @@ export default function HomePage() {
         )}
       </div>
 
-      <footer className="text-center text-[11px] text-stone-600">
+      <footer
+        className="text-center text-[11px] text-stone-300"
+        style={{ textShadow: "0 1px 4px rgba(0,0,0,0.85)" }}
+      >
         Chips represent Rupiah amounts · for tracking only, not real-money transactions.
-        <br />
-        Built by Red Lens
       </footer>
     </main>
   );
