@@ -166,11 +166,11 @@ export default function BetControls({ state, myId, isHost, dispatch }: BetContro
   const callLabel = la.canCheck ? "Check" : `Call ${formatRp(la.callAmount)}`;
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-2">
       {/* Bet builder */}
       {la.canRaise && (
-        <div className="rounded-2xl bg-black/45 p-3">
-          <div className="mb-2 flex items-end justify-between">
+        <div className="rounded-2xl bg-black/45 p-2.5">
+          <div className="mb-1.5 flex items-end justify-between">
             <div>
               <div className="text-[11px] uppercase tracking-widest text-stone-400">
                 {isAllInRaise ? "All-in" : isOpenBet ? "Taruh" : "Raise ke"}
@@ -179,13 +179,13 @@ export default function BetControls({ state, myId, isHost, dispatch }: BetContro
                 {formatRp(pending)}
               </div>
             </div>
-            <div className="flex h-16 items-end">
-              <ChipStack amount={trayAmount} size={28} label={false} />
+            <div className="flex h-11 items-end">
+              <ChipStack amount={trayAmount} size={26} label={false} />
             </div>
           </div>
 
           {/* Tap chips to build the bet, one by one */}
-          <div className="mb-3 flex flex-wrap justify-center gap-2">
+          <div className="mb-2 flex flex-wrap justify-center gap-1.5">
             {CHIP_DEFS.filter((d) => d.value <= la.maxRaiseTo).map((d) => (
               <motion.button
                 key={d.value}
@@ -195,7 +195,7 @@ export default function BetControls({ state, myId, isHost, dispatch }: BetContro
                 className="disabled:opacity-30"
                 aria-label={`Tambah ${formatShort(d.value)}`}
               >
-                <Chip def={d} size={42} />
+                <Chip def={d} size={38} />
               </motion.button>
             ))}
           </div>
@@ -245,7 +245,7 @@ export default function BetControls({ state, myId, isHost, dispatch }: BetContro
       <div className="grid grid-cols-3 gap-2">
         <button
           onClick={() => dispatch({ type: "FOLD", playerId: myId })}
-          className="rounded-2xl bg-gradient-to-b from-stone-700 to-stone-800 py-4 font-bold text-stone-100 shadow transition active:scale-[0.97]"
+          className="rounded-2xl bg-gradient-to-b from-stone-700 to-stone-800 py-3.5 font-bold text-stone-100 shadow transition active:scale-[0.97]"
         >
           Fold
         </button>
@@ -253,7 +253,7 @@ export default function BetControls({ state, myId, isHost, dispatch }: BetContro
           onClick={() =>
             dispatch({ type: la.canCheck ? "CHECK" : "CALL", playerId: myId })
           }
-          className="rounded-2xl bg-gradient-to-b from-emerald-500 to-emerald-700 py-4 font-bold text-white shadow transition active:scale-[0.97]"
+          className="rounded-2xl bg-gradient-to-b from-emerald-500 to-emerald-700 py-3.5 font-bold text-white shadow transition active:scale-[0.97]"
         >
           {callLabel}
         </button>
@@ -266,7 +266,7 @@ export default function BetControls({ state, myId, isHost, dispatch }: BetContro
             )
           }
           disabled={!la.canRaise}
-          className="rounded-2xl bg-gradient-to-b from-vegas-gold to-vegas-goldsoft py-4 font-bold text-black shadow-gold transition active:scale-[0.97] disabled:opacity-40"
+          className="rounded-2xl bg-gradient-to-b from-vegas-gold to-vegas-goldsoft py-3.5 font-bold text-black shadow-gold transition active:scale-[0.97] disabled:opacity-40"
         >
           {isAllInRaise
             ? "All-in"

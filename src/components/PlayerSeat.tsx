@@ -12,6 +12,10 @@ interface PlayerSeatProps {
   isToAct: boolean;
   isWinner: boolean;
   blind?: "SB" | "BB" | null;
+  // When the seat is in the top half of the table, the name goes above the
+  // avatar (outer edge) and committed chips below (toward the pot) — and the
+  // reverse for bottom seats. Keeps text off the centre labels.
+  topHalf: boolean;
 }
 
 function initials(name: string): string {
@@ -20,8 +24,6 @@ function initials(name: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-// Compact, box-free seat: just an avatar with name + stack beneath it. The turn
-// indicator is a gold glow on the avatar (no bulky card around the player).
 export default function PlayerSeat({
   player,
   isMe,
@@ -29,82 +31,97 @@ export default function PlayerSeat({
   isToAct,
   isWinner,
   blind,
+  topHalf,
 }: PlayerSeatProps) {
   const dimmed = player.folded || player.sittingOut;
   const highlight = isToAct || isWinner;
 
-  return (
-    <div className="flex w-[68px] flex-col items-center gap-0.5">
-      {/* Chips committed this round */}
-      {player.committed > 0 && (
-        <ChipStack amount={player.committed} size={18} label={false} />
-      )}
+  const chips =
+    player.committed > 0 ? (
+      <ChipStack amount={player.committed} size={18} label={false} />
+    ) : null;
 
-      <div className={`flex flex-col items-center ${dimmed ? "opacity-50" : ""}`}>
-        {/* Avatar with turn/winner glow */}
-        <motion.div
-          animate={{
-            boxShadow: highlight
-              ? "0 0 0 3px rgba(245,197,66,0.95), 0 0 16px rgba(245,197,66,0.55)"
-              : "0 0 0 2px rgba(0,0,0,0.45)",
-          }}
-          transition={{ duration: 0.25 }}
-          className="rounded-full"
-        >
-          <div
-            className={`relative flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold ${
-              isMe || isWinner ? "bg-vegas-gold text-black" : "bg-felt text-white"
-            }`}
-            style={{ boxShadow: "inset 0 -2px 5px rgba(0,0,0,0.4)" }}
-          >
-            {initials(player.name)}
-            {isDealer && (
-              <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-white text-[8px] font-black text-black shadow">
-                D
-              </span>
-            )}
-            {blind && (
-              <span className="absolute -left-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-vegas-purple px-1 text-[8px] font-bold text-white shadow">
-                {blind}
-              </span>
-            )}
-          </div>
-        </motion.div>
-
-        {/* Name + stack — no box, just legible text on the felt */}
-        <div
-          className="mt-1 flex flex-col items-center leading-tight"
-          style={{ textShadow: "0 1px 3px rgba(0,0,0,0.95)" }}
-        >
-          <span className="max-w-[68px] truncate text-[11px] font-semibold text-white">
-            {player.name}
-            {isMe && " (kamu)"}
-          </span>
-          <span className="text-[11px] font-bold text-vegas-gold tabular-nums">
-            {formatRp(player.stack)}
-          </span>
-        </div>
-
-        {/* Status chips */}
-        {player.allIn && !player.folded && (
-          <span className="mt-0.5 rounded-full bg-vegas-red px-1.5 text-[8px] font-bold uppercase tracking-wide text-white">
-            All-in
+  const avatar = (
+    <motion.div
+      animate={{
+        boxShadow: highlight
+          ? "0 0 0 3px rgba(245,197,66,0.95), 0 0 16px rgba(245,197,66,0.55)"
+          : "0 0 0 2px rgba(0,0,0,0.45)",
+      }}
+      transition={{ duration: 0.25 }}
+      className="rounded-full"
+    >
+      <div
+        className={`relative flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold ${
+          isMe || isWinner ? "bg-vegas-gold text-black" : "bg-felt text-white"
+        }`}
+        style={{ boxShadow: "inset 0 -2px 5px rgba(0,0,0,0.4)" }}
+      >
+        {initials(player.name)}
+        {isDealer && (
+          <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-white text-[8px] font-black text-black shadow">
+            D
           </span>
         )}
-        {player.folded && !player.sittingOut && (
-          <span className="mt-0.5 rounded-full bg-stone-700 px-1.5 text-[8px] font-bold uppercase tracking-wide text-stone-200">
-            Fold
+        {blind && (
+          <span className="absolute -left-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-vegas-purple px-1 text-[8px] font-bold text-white shadow">
+            {blind}
           </span>
-        )}
-        {player.sittingOut && (
-          <span className="mt-0.5 rounded-full bg-stone-700 px-1.5 text-[8px] font-bold uppercase tracking-wide text-stone-200">
-            Duduk
-          </span>
-        )}
-        {!player.connected && !player.sittingOut && (
-          <span className="text-[9px] text-stone-400">offline</span>
         )}
       </div>
+    </motion.div>
+  );
+
+  const nameBlock = (
+    <div
+      className="flex flex-col items-center leading-tight"
+      style={{ textShadow: "0 1px 3px rgba(0,0,0,0.95)" }}
+    >
+      <span className="max-w-[72px] truncate text-[11px] font-semibold text-white">
+        {player.name}
+        {isMe && " (kamu)"}
+      </span>
+      <span className="text-[11px] font-bold text-vegas-gold tabular-nums">
+        {formatRp(player.stack)}
+      </span>
+      {player.allIn && !player.folded && (
+        <span className="rounded-full bg-vegas-red px-1.5 text-[8px] font-bold uppercase tracking-wide text-white">
+          All-in
+        </span>
+      )}
+      {player.folded && !player.sittingOut && (
+        <span className="rounded-full bg-stone-700 px-1.5 text-[8px] font-bold uppercase tracking-wide text-stone-200">
+          Fold
+        </span>
+      )}
+      {player.sittingOut && (
+        <span className="rounded-full bg-stone-700 px-1.5 text-[8px] font-bold uppercase tracking-wide text-stone-200">
+          Duduk
+        </span>
+      )}
+      {!player.connected && !player.sittingOut && (
+        <span className="text-[9px] text-stone-400">offline</span>
+      )}
+    </div>
+  );
+
+  return (
+    <div
+      className={`flex w-[76px] flex-col items-center gap-0.5 ${dimmed ? "opacity-50" : ""}`}
+    >
+      {topHalf ? (
+        <>
+          {nameBlock}
+          {avatar}
+          {chips}
+        </>
+      ) : (
+        <>
+          {chips}
+          {avatar}
+          {nameBlock}
+        </>
+      )}
     </div>
   );
 }

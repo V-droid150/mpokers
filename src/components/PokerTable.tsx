@@ -51,14 +51,14 @@ export default function PokerTable({ state, myId }: PokerTableProps) {
       {/* Felt */}
       <div className="felt-surface absolute inset-3 rounded-[44%]" />
 
-      {/* Centre: pot + round info */}
+      {/* Centre: round label + pot, kept compact so it clears the seats */}
       <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1">
         {inHand && (
-          <span className="rounded-full bg-black/40 px-3 py-0.5 text-[11px] font-semibold uppercase tracking-widest text-vegas-gold/90">
-            {ROUND_LABEL[state.round]}
+          <span className="rounded-full bg-black/45 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-vegas-gold/90">
+            {state.status === "showdown" ? "Showdown" : ROUND_LABEL[state.round]}
           </span>
         )}
-        <ChipStack amount={state.pot} size={30} label={false} layoutId="pot" />
+        <ChipStack amount={state.pot} size={28} label={false} layoutId="pot" />
         <div className="rounded-full border border-vegas-gold/40 bg-black/50 px-4 py-1 text-center">
           <div className="text-[10px] uppercase tracking-widest text-stone-300">Pot</div>
           <div className="text-lg font-bold text-vegas-gold tabular-nums leading-none">
@@ -66,18 +66,9 @@ export default function PokerTable({ state, myId }: PokerTableProps) {
           </div>
         </div>
         {inHand && state.currentBet > 0 && (
-          <span className="text-[11px] text-stone-300">
-            Taruhan: <span className="font-semibold text-white">{formatRp(state.currentBet)}</span>
+          <span className="text-[10px] text-stone-300">
+            Taruhan {formatRp(state.currentBet)}
           </span>
-        )}
-        {state.status === "showdown" && (
-          <motion.span
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="mt-1 rounded-full bg-vegas-red px-3 py-0.5 text-[11px] font-bold uppercase tracking-wide text-white"
-          >
-            Showdown
-          </motion.span>
         )}
       </div>
 
@@ -97,6 +88,7 @@ export default function PokerTable({ state, myId }: PokerTableProps) {
               isToAct={state.status === "playing" && state.toActSeat === player.seat}
               isWinner={state.status === "handover" && state.winners.includes(player.seat)}
               blind={null}
+              topHalf={pos.y < 50}
             />
           </div>
         );

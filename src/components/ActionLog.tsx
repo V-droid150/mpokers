@@ -2,21 +2,13 @@
 
 import type { LogEntry } from "@/lib/types";
 
+// Minimal: just the single most-recent action as one subtle line, so it never
+// crowds the table or the controls.
 export default function ActionLog({ log }: { log: LogEntry[] }) {
-  const recent = [...log].slice(-6).reverse();
+  const last = log[log.length - 1];
   return (
-    <div className="no-scrollbar max-h-24 overflow-y-auto rounded-2xl bg-black/35 px-3 py-2">
-      {recent.length === 0 ? (
-        <p className="text-center text-xs text-stone-500">Belum ada aksi.</p>
-      ) : (
-        <ul className="space-y-0.5">
-          {recent.map((e) => (
-            <li key={e.id} className="text-xs text-stone-300">
-              {e.text}
-            </li>
-          ))}
-        </ul>
-      )}
+    <div className="h-5 px-2 text-center text-[11px] leading-5 text-stone-400">
+      <span className="line-clamp-1">{last ? last.text : ""}</span>
     </div>
   );
 }

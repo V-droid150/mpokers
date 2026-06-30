@@ -286,11 +286,11 @@ function PlayView({
         <PokerTable state={state} myId={activeId} />
       </div>
 
-      <div className="mb-1.5 shrink-0">
+      <div className="shrink-0">
         <ActionLog log={state.log} />
       </div>
 
-      <div className="shrink-0">
+      <div className="flex min-h-[16rem] shrink-0 flex-col justify-end pt-1">
         <BetControls state={state} myId={activeId} isHost dispatch={dispatch} />
       </div>
     </main>

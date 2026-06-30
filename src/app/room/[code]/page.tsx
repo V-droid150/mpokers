@@ -183,13 +183,13 @@ export default function RoomPage() {
         <PokerTable state={state} myId={myId} />
       </div>
 
-      {/* Log */}
-      <div className="mb-1.5 shrink-0">
+      {/* Log — one minimal line */}
+      <div className="shrink-0">
         <ActionLog log={state.log} />
       </div>
 
-      {/* Controls — always pinned at the bottom, no scrolling needed */}
-      <div className="shrink-0">
+      {/* Controls — fixed reserved height so the table never resizes mid-hand */}
+      <div className="flex min-h-[16rem] shrink-0 flex-col justify-end pt-1">
         <BetControls state={state} myId={myId} isHost={isHost} dispatch={dispatch} />
       </div>
     </main>
