@@ -8,6 +8,7 @@ import ChipStack from "./ChipStack";
 interface PlayerSeatProps {
   player: Player;
   isMe: boolean;
+  isHost?: boolean;
   isDealer: boolean;
   isToAct: boolean;
   isWinner: boolean;
@@ -27,6 +28,7 @@ function initials(name: string): string {
 export default function PlayerSeat({
   player,
   isMe,
+  isHost,
   isDealer,
   isToAct,
   isWinner,
@@ -58,6 +60,15 @@ export default function PlayerSeat({
         style={{ boxShadow: "inset 0 -2px 5px rgba(0,0,0,0.4)" }}
       >
         {initials(player.name)}
+        {isHost && (
+          <span
+            className="absolute -left-1.5 -top-2 text-[11px] leading-none drop-shadow"
+            aria-label="Host"
+            title="Host"
+          >
+            👑
+          </span>
+        )}
         {isDealer && (
           <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-white text-[8px] font-black text-black shadow">
             D
@@ -79,7 +90,7 @@ export default function PlayerSeat({
     >
       <span className="max-w-[72px] truncate text-[11px] font-semibold text-white">
         {player.name}
-        {isMe && " (kamu)"}
+        {isMe && " (you)"}
       </span>
       <span className="text-[11px] font-bold text-vegas-gold tabular-nums">
         {formatRp(player.stack)}
@@ -96,7 +107,7 @@ export default function PlayerSeat({
       )}
       {player.sittingOut && (
         <span className="rounded-full bg-stone-700 px-1.5 text-[8px] font-bold uppercase tracking-wide text-stone-200">
-          Duduk
+          Out
         </span>
       )}
       {!player.connected && !player.sittingOut && (

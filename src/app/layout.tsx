@@ -16,7 +16,7 @@ const sans = Inter({
 export const metadata: Metadata = {
   title: "Mpokers — Cardless Poker Chips",
   description:
-    "Kelola chip & taruhan poker online tanpa kartu. Vegas vibes, mobile-friendly, hingga 8 pemain.",
+    "Manage online poker chips & bets without cards. Vegas vibes, mobile-friendly, up to 8 players.",
   applicationName: "Mpokers",
   appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Mpokers" },
 };
@@ -35,7 +35,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id" className={`${display.variable} ${sans.variable}`}>
+    <html lang="en" className={`${display.variable} ${sans.variable}`}>
       <body>{children}</body>
     </html>
   );

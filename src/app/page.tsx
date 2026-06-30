@@ -6,6 +6,7 @@ import { getStoredName, setStoredName } from "@/lib/identity";
 import { makeRoomCode } from "@/lib/format";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import BrandMark from "@/components/BrandMark";
+import MenuBackground from "@/components/MenuBackground";
 
 export default function HomePage() {
   const router = useRouter();
@@ -33,30 +34,31 @@ export default function HomePage() {
 
   return (
     <main className="mx-auto flex min-h-[100dvh] max-w-md flex-col items-center justify-center gap-8 px-6 py-10">
+      <MenuBackground />
       <header className="text-center">
         <BrandMark />
         <p className="mt-3 text-sm text-stone-400">
-          Poker tanpa kartu — atur chip &amp; taruhan. Vegas style, sampai 8 pemain.
+          Cardless poker — manage chips &amp; bets. Vegas style, up to 8 players.
         </p>
       </header>
 
       {!isSupabaseConfigured && (
         <div className="w-full rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-xs text-amber-200">
-          ⚠️ Supabase belum dikonfigurasi. Salin <code>.env.local.example</code> ke{" "}
-          <code>.env.local</code> dan isi URL + anon key untuk mengaktifkan mode online.
+          ⚠️ Supabase isn&apos;t configured. Copy <code>.env.local.example</code> to{" "}
+          <code>.env.local</code> and fill in the URL + anon key to enable online mode.
         </div>
       )}
 
       <div className="w-full space-y-4">
         <label className="block">
           <span className="mb-1 block text-xs uppercase tracking-widest text-stone-400">
-            Nama kamu
+            Your name
           </span>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             maxLength={14}
-            placeholder="mis. Budi"
+            placeholder="e.g. Alex"
             className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-lg font-semibold outline-none focus:border-vegas-gold"
           />
         </label>
@@ -68,20 +70,20 @@ export default function HomePage() {
               disabled={!ready}
               className="w-full rounded-2xl bg-gradient-to-b from-vegas-gold to-vegas-goldsoft py-4 text-lg font-bold text-black shadow-gold transition active:scale-[0.98] disabled:opacity-40"
             >
-              Buat Meja Baru
+              Create New Table
             </button>
             <button
               onClick={() => setMode("join")}
               disabled={!ready}
               className="w-full rounded-2xl border border-vegas-gold/50 bg-black/40 py-4 text-lg font-bold text-vegas-gold transition active:scale-[0.98] disabled:opacity-40"
             >
-              Gabung Meja
+              Join Table
             </button>
             <button
               onClick={() => router.push("/local")}
               className="w-full py-2 text-sm text-stone-400 underline-offset-4 hover:underline"
             >
-              atau coba Main Lokal (1 perangkat, tanpa online)
+              or try Local Play (1 device, offline)
             </button>
           </div>
         ) : (
@@ -90,7 +92,7 @@ export default function HomePage() {
               value={joinCode}
               onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
               maxLength={4}
-              placeholder="KODE MEJA"
+              placeholder="TABLE CODE"
               className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-center text-2xl font-black tracking-[0.4em] outline-none focus:border-vegas-gold"
             />
             <button
@@ -98,20 +100,20 @@ export default function HomePage() {
               disabled={!ready || joinCode.trim().length < 3}
               className="w-full rounded-2xl bg-gradient-to-b from-vegas-gold to-vegas-goldsoft py-4 text-lg font-bold text-black shadow-gold transition active:scale-[0.98] disabled:opacity-40"
             >
-              Masuk
+              Enter
             </button>
             <button
               onClick={() => setMode("menu")}
               className="w-full py-2 text-sm text-stone-400"
             >
-              ← Kembali
+              ← Back
             </button>
           </div>
         )}
       </div>
 
       <footer className="text-center text-[11px] text-stone-600">
-        Chip mewakili nominal Rupiah · hanya pencatatan, bukan transaksi uang.
+        Chips represent Rupiah amounts · for tracking only, not real-money transactions.
         <br />
         Built by Red Lens
       </footer>

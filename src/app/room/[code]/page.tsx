@@ -9,6 +9,7 @@ import BetControls from "@/components/BetControls";
 import ActionLog from "@/components/ActionLog";
 import Scoreboard from "@/components/Scoreboard";
 import SoundToggle from "@/components/SoundToggle";
+import MenuBackground from "@/components/MenuBackground";
 
 export default function RoomPage() {
   const router = useRouter();
@@ -76,12 +77,13 @@ export default function RoomPage() {
   if (myId && !name) {
     return (
       <main className="mx-auto flex min-h-[100dvh] max-w-md flex-col items-center justify-center gap-6 px-6">
-        <h1 className="font-display text-3xl font-bold text-foil">Masuk meja {code}</h1>
+        <MenuBackground />
+        <h1 className="font-display text-3xl font-bold text-foil">Join table {code}</h1>
         <input
           value={nameInput}
           onChange={(e) => setNameInput(e.target.value)}
           maxLength={14}
-          placeholder="Nama kamu"
+          placeholder="Your name"
           className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-lg font-semibold outline-none focus:border-vegas-gold"
         />
         <button
@@ -93,7 +95,7 @@ export default function RoomPage() {
           disabled={nameInput.trim().length < 2}
           className="w-full rounded-2xl bg-gradient-to-b from-vegas-gold to-vegas-goldsoft py-4 text-lg font-bold text-black shadow-gold disabled:opacity-40"
         >
-          Lanjut
+          Continue
         </button>
       </main>
     );
@@ -103,10 +105,10 @@ export default function RoomPage() {
   if (status === "unconfigured") {
     return (
       <CenterCard>
-        <p className="text-amber-300">⚠️ Supabase belum dikonfigurasi.</p>
+        <p className="text-amber-300">⚠️ Supabase isn&apos;t configured.</p>
         <p className="mt-2 text-sm text-stone-300">
-          Isi <code>.env.local</code> dengan URL &amp; anon key Supabase, lalu jalankan
-          ulang.
+          Fill in <code>.env.local</code> with your Supabase URL &amp; anon key, then
+          restart.
         </p>
       </CenterCard>
     );
@@ -114,19 +116,19 @@ export default function RoomPage() {
   if (status === "loading" || !state) {
     return (
       <CenterCard>
-        <div className="animate-pulse text-vegas-gold">Memuat meja {code}…</div>
+        <div className="animate-pulse text-vegas-gold">Loading table {code}…</div>
       </CenterCard>
     );
   }
   if (status === "missing") {
     return (
       <CenterCard>
-        <p className="text-lg font-semibold">Meja {code} tidak ditemukan.</p>
+        <p className="text-lg font-semibold">Table {code} not found.</p>
         <button
           onClick={() => router.push("/")}
           className="mt-4 rounded-xl bg-vegas-gold px-5 py-2.5 font-bold text-black"
         >
-          Kembali
+          Back
         </button>
       </CenterCard>
     );
@@ -134,38 +136,40 @@ export default function RoomPage() {
   if (status === "error") {
     return (
       <CenterCard>
-        <p className="text-red-300">Terjadi kesalahan koneksi.</p>
+        <p className="text-red-300">Connection error.</p>
         <p className="mt-2 text-xs text-stone-400">{error}</p>
       </CenterCard>
     );
   }
 
-  // No designated host online — the real-life dealer runs the game, so any
-  // player can start hands, pick winners, and tweak table settings.
-  const isHost = true;
+  // Every online room has a designated host (the room creator, or whoever the
+  // role transfers to if they leave). Only the host runs the table — starting
+  // hands, tweaking settings, and crucially awarding the pot to the winner.
+  const isHost = myId === state.hostId;
+  const hostName = state.players.find((p) => p.id === state.hostId)?.name ?? null;
 
   return (
     <main className="mx-auto flex h-[100dvh] max-w-md flex-col overflow-hidden px-3 pb-2 pt-2">
       {/* Header */}
       <div className="mb-1.5 flex shrink-0 items-center justify-between">
         <button onClick={leave} className="text-sm text-stone-400 active:text-stone-200">
-          ← Keluar
+          ← Leave
         </button>
         <button
           onClick={copyCode}
           className="flex items-center gap-2 rounded-full border border-vegas-gold/40 bg-black/40 px-4 py-1.5"
         >
-          <span className="text-[10px] uppercase tracking-widest text-stone-400">Kode</span>
+          <span className="text-[10px] uppercase tracking-widest text-stone-400">Code</span>
           <span className="font-display text-lg font-bold tracking-[0.3em] text-vegas-gold">
             {code}
           </span>
-          <span className="text-[10px] text-stone-400">{copied ? "tersalin!" : "salin"}</span>
+          <span className="text-[10px] text-stone-400">{copied ? "copied!" : "copy"}</span>
         </button>
         <div className="flex items-center gap-1.5">
           <span className="text-xs text-stone-500">{state.players.length}/8</span>
           <button
             onClick={() => setShowScore(true)}
-            aria-label="Skor untung-rugi"
+            aria-label="Scoreboard"
             className="rounded-full border border-white/10 bg-black/40 px-2.5 py-1.5 text-sm active:scale-95"
           >
             📊
@@ -174,13 +178,22 @@ export default function RoomPage() {
         </div>
       </div>
 
+      {/* Host indicator */}
+      <div className="mb-0.5 shrink-0 text-center text-[11px] text-stone-400">
+        {isHost ? (
+          <span className="text-vegas-gold">👑 You are the host — you run the table.</span>
+        ) : (
+          <span>👑 Host: {hostName ?? "—"} · only the host awards the pot.</span>
+        )}
+      </div>
+
       {showScore && (
         <Scoreboard players={state.players} onClose={() => setShowScore(false)} />
       )}
 
       {/* Table — flexes to fill the space between header and controls */}
       <div className="min-h-0 flex-1 pb-1 pt-3">
-        <PokerTable state={state} myId={myId} />
+        <PokerTable state={state} myId={myId} hostId={state.hostId} />
       </div>
 
       {/* Log — one minimal line */}

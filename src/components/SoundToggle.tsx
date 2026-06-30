@@ -16,7 +16,7 @@ export default function SoundToggle() {
         setMuted(next);
         setM(next);
       }}
-      aria-label={muted ? "Bunyikan" : "Bisukan"}
+      aria-label={muted ? "Unmute" : "Mute"}
       className="rounded-full border border-white/10 bg-black/40 px-2.5 py-1.5 text-sm active:scale-95"
     >
       {muted ? "🔇" : "🔊"}

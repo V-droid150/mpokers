@@ -2,19 +2,19 @@
 
 export function formatRp(value: number): string {
   const safe = Math.round(value || 0);
-  return "Rp" + safe.toLocaleString("id-ID");
+  return "Rp" + safe.toLocaleString("en-US");
 }
 
-// Compact form for chips on the felt (e.g. 1.500.000 -> 1,5jt, 25.000 -> 25rb).
+// Compact form for chips on the felt (e.g. 1,500,000 -> 1.5M, 25,000 -> 25K).
 export function formatShort(value: number): string {
   const v = Math.round(value || 0);
   if (v >= 1_000_000) {
     const n = v / 1_000_000;
-    return (Number.isInteger(n) ? n.toString() : n.toFixed(1).replace(".", ",")) + "jt";
+    return (Number.isInteger(n) ? n.toString() : n.toFixed(1)) + "M";
   }
   if (v >= 1_000) {
     const n = v / 1_000;
-    return (Number.isInteger(n) ? n.toString() : n.toFixed(1).replace(".", ",")) + "rb";
+    return (Number.isInteger(n) ? n.toString() : n.toFixed(1)) + "K";
   }
   return v.toString();
 }

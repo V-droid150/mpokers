@@ -126,6 +126,17 @@ function lowestFreeSeat(s: GameState): number {
   return -1;
 }
 
+// Every online room needs a host (the banker who awards pots and runs the
+// table). If the current host is gone, hand the role to a remaining player —
+// preferring someone connected — so the game never gets stuck.
+function ensureHost(s: GameState): void {
+  if (s.players.length === 0) return;
+  if (s.players.some((p) => p.id === s.hostId)) return;
+  const next = s.players.find((p) => p.connected) ?? s.players[0];
+  s.hostId = next.id;
+  addLog(s, `${next.name} is now the host.`);
+}
+
 // ---------- pot resolution ----------
 
 function awardPot(s: GameState, winnerSeats: number[]): void {
@@ -146,7 +157,7 @@ function awardPot(s: GameState, winnerSeats: number[]): void {
       p.stack += amt;
     }
     const names = sorted.map((seat) => getBySeat(s, seat)?.name ?? "?").join(" & ");
-    addLog(s, `${names} memenangkan pot ${formatRp(pot)}.`);
+    addLog(s, `${names} won the pot ${formatRp(pot)}.`);
   }
   s.lastPot = pot;
   s.winners = valid;
@@ -211,7 +222,7 @@ function resolve(s: GameState, actedSeat: number): void {
     if (s.round === "river" || canActPlayers.length <= 1) {
       s.status = "showdown";
       s.toActSeat = null;
-      addLog(s, "Taruhan selesai — pilih pemenang.");
+      addLog(s, "Betting complete — pick the winner.");
       return;
     }
     advanceStreet(s);
@@ -227,7 +238,7 @@ function startHand(s: GameState): void {
   const dealt = s.players.filter(isDealtIn);
   if (dealt.length < 2) {
     s.status = "lobby";
-    addLog(s, "Butuh minimal 2 pemain dengan chip untuk mulai.");
+    addLog(s, "Need at least 2 players with chips to start.");
     return;
   }
 
@@ -257,7 +268,7 @@ function startHand(s: GameState): void {
     if (next !== null) s.dealerSeat = next;
   }
 
-  addLog(s, `Hand #${s.handId} dimulai. Dealer: ${getBySeat(s, s.dealerSeat)?.name}.`);
+  addLog(s, `Hand #${s.handId} started. Dealer: ${getBySeat(s, s.dealerSeat)?.name}.`);
 
   const postBlind = (seat: number, amount: number): void => {
     const p = getBySeat(s, seat);
@@ -269,7 +280,7 @@ function startHand(s: GameState): void {
     p.totalCommitted += pay;
     s.pot += pay;
     if (p.stack === 0) p.allIn = true;
-    addLog(s, `${p.name} pasang ${formatRp(pay)}.`);
+    addLog(s, `${p.name} posts ${formatRp(pay)}.`);
   };
 
   const dealtSeatsAfterDealer = seatsAfter(s, s.dealerSeat).filter((seat) =>
@@ -379,7 +390,7 @@ export function reduce(state: GameState, action: Action): GameState {
       }
       const player: Player = {
         id: action.playerId,
-        name: action.name || `Pemain ${seat + 1}`,
+        name: action.name || `Player ${seat + 1}`,
         seat,
         stack: s.buyIn,
         committed: 0,
@@ -392,7 +403,8 @@ export function reduce(state: GameState, action: Action): GameState {
         buyInTotal: s.buyIn,
       };
       s.players.push(player);
-      addLog(s, `${player.name} bergabung (kursi ${seat + 1}).`);
+      ensureHost(s);
+      addLog(s, `${player.name} joined (seat ${seat + 1}).`);
       break;
     }
 
@@ -431,7 +443,7 @@ export function reduce(state: GameState, action: Action): GameState {
           resolve(s, p.seat);
         }
       }
-      addLog(s, `${p.name} ${action.sittingOut ? "duduk dulu" : "ikut main lagi"}.`);
+      addLog(s, `${p.name} ${action.sittingOut ? "sat out" : "is back in"}.`);
       break;
     }
 
@@ -450,7 +462,8 @@ export function reduce(state: GameState, action: Action): GameState {
         p.hasActed = true;
       }
       s.players = s.players.filter((x) => x.id !== action.playerId);
-      addLog(s, `${name} keluar dari meja.`);
+      addLog(s, `${name} left the table.`);
+      ensureHost(s);
       if (wasTurn) resolve(s, seat);
       break;
     }
@@ -468,7 +481,7 @@ export function reduce(state: GameState, action: Action): GameState {
       }
       p.stack += action.amount;
       p.buyInTotal += action.amount;
-      addLog(s, `${p.name} top-up ${formatRp(action.amount)}.`);
+      addLog(s, `${p.name} topped up ${formatRp(action.amount)}.`);
       break;
     }
 
@@ -481,7 +494,7 @@ export function reduce(state: GameState, action: Action): GameState {
       s.bigBlind = Math.max(s.smallBlind, Math.round(action.bigBlind));
       s.buyIn = Math.max(0, Math.round(action.buyIn));
       s.minRaise = minRaiseFor(s.bigBlind);
-      addLog(s, `Blind ${formatRp(s.smallBlind)}/${formatRp(s.bigBlind)}, buy-in ${formatRp(s.buyIn)}.`);
+      addLog(s, `Blinds ${formatRp(s.smallBlind)}/${formatRp(s.bigBlind)}, buy-in ${formatRp(s.buyIn)}.`);
       break;
     }
 
@@ -495,7 +508,7 @@ export function reduce(state: GameState, action: Action): GameState {
         p.stack = s.buyIn;
         p.buyInTotal = s.buyIn;
       }
-      addLog(s, `Chip semua pemain disamakan ke ${formatRp(s.buyIn)}.`);
+      addLog(s, `All players reset to ${formatRp(s.buyIn)}.`);
       break;
     }
 
@@ -594,7 +607,7 @@ export function reduce(state: GameState, action: Action): GameState {
           if (canAct(other) && other.seat !== p.seat) other.hasActed = false;
         }
         p.hasActed = true;
-        addLog(s, `${p.name} raise ke ${formatRp(total)}${p.allIn ? " (all-in)" : ""}.`);
+        addLog(s, `${p.name} raises to ${formatRp(total)}${p.allIn ? " (all-in)" : ""}.`);
       } else {
         // ALL_IN
         const delta = p.stack;

@@ -12,6 +12,7 @@ import BetControls from "@/components/BetControls";
 import ActionLog from "@/components/ActionLog";
 import Scoreboard from "@/components/Scoreboard";
 import SoundToggle from "@/components/SoundToggle";
+import MenuBackground from "@/components/MenuBackground";
 
 interface SeatDraft {
   id: string;
@@ -55,8 +56,8 @@ function SetupMenu({
   const [seats, setSeats] = useState<SeatDraft[]>(() => {
     const stored = getStoredName();
     return [
-      { id: newId(), name: stored || "Pemain 1" },
-      { id: newId(), name: "Pemain 2" },
+      { id: newId(), name: stored || "Player 1" },
+      { id: newId(), name: "Player 2" },
     ];
   });
   const [buyIn, setBuyIn] = useState(100000);
@@ -73,7 +74,7 @@ function SetupMenu({
   const add = () =>
     setSeats((arr) =>
       arr.length < MAX_PLAYERS
-        ? [...arr, { id: newId(), name: `Pemain ${arr.length + 1}` }]
+        ? [...arr, { id: newId(), name: `Player ${arr.length + 1}` }]
         : arr
     );
 
@@ -90,25 +91,26 @@ function SetupMenu({
 
   return (
     <main className="mx-auto flex min-h-[100dvh] max-w-md flex-col px-5 py-6">
+      <MenuBackground />
       <button
         onClick={onBack}
         className="mb-4 self-start text-sm text-stone-400 active:text-stone-200"
       >
-        ← Kembali
+        ← Back
       </button>
 
       <header className="mb-6 text-center">
         <div className="mb-1 text-4xl">🎰</div>
-        <h1 className="font-display text-3xl font-black text-foil">Atur Meja</h1>
+        <h1 className="font-display text-3xl font-black text-foil">Set Up Table</h1>
         <p className="mt-1 text-xs text-stone-400">
-          Main satu perangkat — gilir HP tiap giliran.
+          Single-device play — pass the phone each turn.
         </p>
       </header>
 
       {/* Players */}
       <section className="mb-5">
         <h2 className="mb-2 text-xs uppercase tracking-widest text-stone-400">
-          Pemain ({named.length})
+          Players ({named.length})
         </h2>
         <div className="space-y-2">
           {seats.map((s, i) => (
@@ -120,14 +122,14 @@ function SetupMenu({
                 value={s.name}
                 onChange={(e) => rename(s.id, e.target.value)}
                 maxLength={14}
-                placeholder={`Pemain ${i + 1}`}
+                placeholder={`Player ${i + 1}`}
                 className="flex-1 rounded-xl border border-white/10 bg-black/40 px-3 py-2.5 text-base font-semibold outline-none focus:border-vegas-gold"
               />
               {seats.length > 2 && (
                 <button
                   onClick={() => remove(s.id)}
                   className="shrink-0 rounded-lg bg-white/10 px-3 py-2 text-sm text-stone-300 active:scale-95"
-                  aria-label="Hapus pemain"
+                  aria-label="Remove player"
                 >
                   ✕
                 </button>
@@ -140,7 +142,7 @@ function SetupMenu({
             onClick={add}
             className="mt-2 w-full rounded-xl border border-dashed border-white/20 py-2.5 text-sm font-semibold text-stone-300 active:scale-[0.99]"
           >
-            + Tambah Pemain
+            + Add Player
           </button>
         )}
       </section>
@@ -148,20 +150,20 @@ function SetupMenu({
       {/* Stakes */}
       <section className="mb-6 space-y-3">
         <h2 className="text-xs uppercase tracking-widest text-stone-400">
-          Pengaturan
+          Settings
         </h2>
         <Field
-          label="Chip awal per pemain"
+          label="Starting chips per player"
           value={buyIn}
           onChange={setBuyIn}
           hint={formatShort(buyIn)}
         />
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Blind kecil" value={smallBlind} onChange={setSmallBlind} />
-          <Field label="Blind besar" value={bigBlind} onChange={setBigBlind} />
+          <Field label="Small blind" value={smallBlind} onChange={setSmallBlind} />
+          <Field label="Big blind" value={bigBlind} onChange={setBigBlind} />
         </div>
         <p className="text-[11px] text-stone-500">
-          Blind 0/0 = taruhan awal mulai dari 0, pemain menaruh chip sendiri tiap ronde.
+          Blinds 0/0 = betting starts at 0, players add their own chips each round.
         </p>
       </section>
 
@@ -170,7 +172,7 @@ function SetupMenu({
         disabled={!canStart}
         className="mt-auto w-full rounded-2xl bg-gradient-to-b from-vegas-gold to-vegas-goldsoft py-4 text-lg font-bold text-black shadow-gold transition active:scale-[0.98] disabled:opacity-40"
       >
-        Mulai Permainan
+        Start Game
       </button>
     </main>
   );
@@ -228,7 +230,7 @@ function PlayView({
   }, [state]);
 
   const addPlayer = () => {
-    const name = newName.trim() || `Pemain ${state.players.length + 1}`;
+    const name = newName.trim() || `Player ${state.players.length + 1}`;
     dispatch({ type: "JOIN", playerId: newId(), name });
     setNewName("");
   };
@@ -241,16 +243,16 @@ function PlayView({
     <main className="mx-auto flex h-[100dvh] max-w-md flex-col overflow-hidden px-3 pb-2 pt-2">
       <div className="mb-1.5 flex shrink-0 items-center justify-between">
         <button onClick={onExit} className="text-sm text-stone-400 active:text-stone-200">
-          ← Keluar
+          ← Leave
         </button>
         <span className="rounded-full border border-vegas-gold/40 bg-black/40 px-4 py-1.5 font-display text-sm font-bold tracking-[0.2em] text-vegas-gold">
-          MAIN LOKAL
+          LOCAL PLAY
         </span>
         <div className="flex items-center gap-1.5">
           <span className="text-xs text-stone-500">{state.players.length}/8</span>
           <button
             onClick={() => setShowScore(true)}
-            aria-label="Skor untung-rugi"
+            aria-label="Scoreboard"
             className="rounded-full border border-white/10 bg-black/40 px-2.5 py-1.5 text-sm active:scale-95"
           >
             📊
@@ -269,7 +271,7 @@ function PlayView({
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             maxLength={14}
-            placeholder="Tambah nama pemain…"
+            placeholder="Add player name…"
             className="flex-1 rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm outline-none focus:border-vegas-gold"
             onKeyDown={(e) => e.key === "Enter" && addPlayer()}
           />
@@ -277,7 +279,7 @@ function PlayView({
             onClick={addPlayer}
             className="rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold text-stone-100 active:scale-95"
           >
-            + Tambah
+            + Add
           </button>
         </div>
       )}

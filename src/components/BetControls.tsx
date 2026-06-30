@@ -45,7 +45,7 @@ export default function BetControls({ state, myId, isHost, dispatch }: BetContro
   if (!me) {
     return (
       <div className="rounded-2xl bg-black/50 p-4 text-center text-sm text-stone-300">
-        Kamu menonton meja ini.
+        You&apos;re spectating this table.
       </div>
     );
   }
@@ -77,15 +77,15 @@ export default function BetControls({ state, myId, isHost, dispatch }: BetContro
               disabled={dealtCount < 2}
               className="w-full rounded-2xl bg-gradient-to-b from-vegas-gold to-vegas-goldsoft py-4 text-lg font-bold text-black shadow-gold transition active:scale-[0.98] disabled:opacity-40"
             >
-              {state.status === "handover" ? "Bagi Hand Berikutnya" : "Mulai Hand"}
-              {dealtCount < 2 && " (butuh 2 pemain)"}
+              {state.status === "handover" ? "Deal Next Hand" : "Start Hand"}
+              {dealtCount < 2 && " (need 2 players)"}
             </button>
           </>
         ) : (
           <div className="rounded-2xl bg-black/50 py-3 text-center text-sm text-stone-300">
-            Blind {formatRp(state.smallBlind)}/{formatRp(state.bigBlind)} · chip awal{" "}
+            Blinds {formatRp(state.smallBlind)}/{formatRp(state.bigBlind)} · starting chips{" "}
             {formatRp(state.buyIn)}
-            <div className="mt-1 text-stone-400">Menunggu host memulai hand…</div>
+            <div className="mt-1 text-stone-400">Waiting for the host to start the hand…</div>
           </div>
         )}
       </div>
@@ -97,7 +97,7 @@ export default function BetControls({ state, myId, isHost, dispatch }: BetContro
     return (
       <div className="flex flex-col gap-3">
         <div className="text-center text-sm font-semibold text-vegas-gold">
-          Pot {formatRp(state.pot)} — siapa yang menang?
+          Pot {formatRp(state.pot)} — who won?
         </div>
         {isHost ? (
           <>
@@ -125,7 +125,7 @@ export default function BetControls({ state, myId, isHost, dispatch }: BetContro
             </div>
             {winners.length > 1 && (
               <p className="text-center text-xs text-stone-400">
-                Pot dibagi rata untuk {winners.length} pemain.
+                Pot split evenly between {winners.length} players.
               </p>
             )}
             <button
@@ -133,12 +133,12 @@ export default function BetControls({ state, myId, isHost, dispatch }: BetContro
               disabled={winners.length === 0}
               className="w-full rounded-2xl bg-gradient-to-b from-vegas-gold to-vegas-goldsoft py-4 text-lg font-bold text-black shadow-gold transition active:scale-[0.98] disabled:opacity-40"
             >
-              Berikan Pot
+              Award Pot
             </button>
           </>
         ) : (
           <div className="rounded-2xl bg-black/50 py-4 text-center text-sm text-stone-300">
-            Menunggu host memilih pemenang…
+            Waiting for the host to pick the winner…
           </div>
         )}
       </div>
@@ -153,10 +153,10 @@ export default function BetControls({ state, myId, isHost, dispatch }: BetContro
         <PlayerBar me={me} dispatch={dispatch} state={state} />
         <div className="rounded-2xl bg-black/50 py-4 text-center text-sm text-stone-300">
           {me.folded
-            ? "Kamu sudah fold. Menunggu hand selesai…"
+            ? "You folded. Waiting for the hand to finish…"
             : me.allIn
-            ? "Kamu all-in. Menunggu hasil…"
-            : `Giliran ${toAct?.name ?? "pemain lain"}…`}
+            ? "You're all-in. Waiting for the result…"
+            : `${toAct?.name ?? "Another player"}'s turn…`}
         </div>
       </div>
     );
@@ -173,7 +173,7 @@ export default function BetControls({ state, myId, isHost, dispatch }: BetContro
           <div className="mb-1.5 flex items-end justify-between">
             <div>
               <div className="text-[11px] uppercase tracking-widest text-stone-400">
-                {isAllInRaise ? "All-in" : isOpenBet ? "Taruh" : "Raise ke"}
+                {isAllInRaise ? "All-in" : isOpenBet ? "Bet" : "Raise to"}
               </div>
               <div className="text-2xl font-bold text-vegas-gold tabular-nums leading-none">
                 {formatRp(pending)}
@@ -193,7 +193,7 @@ export default function BetControls({ state, myId, isHost, dispatch }: BetContro
                 onClick={() => addChip(d.value)}
                 disabled={pending >= la.maxRaiseTo}
                 className="disabled:opacity-30"
-                aria-label={`Tambah ${formatShort(d.value)}`}
+                aria-label={`Add ${formatShort(d.value)}`}
               >
                 <Chip def={d} size={38} />
               </motion.button>
@@ -290,7 +290,7 @@ function PlayerBar({
   return (
     <div className="flex items-center justify-between rounded-2xl bg-black/45 px-4 py-2.5">
       <div>
-        <div className="text-[11px] uppercase tracking-widest text-stone-400">Chip kamu</div>
+        <div className="text-[11px] uppercase tracking-widest text-stone-400">Your chips</div>
         <div className="text-xl font-bold text-vegas-gold tabular-nums leading-none">
           {formatRp(me.stack)}
         </div>
@@ -300,7 +300,7 @@ function PlayerBar({
           onClick={() => dispatch({ type: "REBUY", playerId: me.id, amount: state.buyIn })}
           className="rounded-xl bg-white/10 px-3 py-2 text-sm font-semibold text-stone-100 active:scale-95"
         >
-          + Top-up {formatShort(state.buyIn)}
+          + Top up {formatShort(state.buyIn)}
         </button>
         <button
           onClick={() =>
@@ -308,7 +308,7 @@ function PlayerBar({
           }
           className="rounded-xl bg-white/10 px-3 py-2 text-sm font-semibold text-stone-100 active:scale-95"
         >
-          {me.sittingOut ? "Ikut Main" : "Duduk Dulu"}
+          {me.sittingOut ? "Sit In" : "Sit Out"}
         </button>
       </div>
     </div>
@@ -352,7 +352,7 @@ function HostSettings({
         onClick={() => setOpen((o) => !o)}
         className="flex w-full items-center justify-between px-4 py-2.5 text-sm font-semibold text-stone-200"
       >
-        <span>⚙️ Pengaturan Meja</span>
+        <span>⚙️ Table Settings</span>
         <span className="text-xs text-stone-400">
           {formatRp(state.smallBlind)}/{formatRp(state.bigBlind)} · {formatShort(state.buyIn)}{" "}
           {open ? "▲" : "▼"}
@@ -362,9 +362,9 @@ function HostSettings({
       {open && (
         <div className="space-y-3 px-4 pb-4 pt-1">
           <div className="grid grid-cols-3 gap-2">
-            <NumField label="Blind kecil" value={sb} onChange={setSb} />
-            <NumField label="Blind besar" value={bb} onChange={setBb} />
-            <NumField label="Chip awal" value={buyIn} onChange={setBuyIn} />
+            <NumField label="Small blind" value={sb} onChange={setSb} />
+            <NumField label="Big blind" value={bb} onChange={setBb} />
+            <NumField label="Starting chips" value={buyIn} onChange={setBuyIn} />
           </div>
 
           <div className="flex gap-2">
@@ -373,18 +373,18 @@ function HostSettings({
               disabled={!dirty}
               className="flex-1 rounded-xl bg-gradient-to-b from-vegas-gold to-vegas-goldsoft py-2.5 text-sm font-bold text-black shadow-gold transition active:scale-[0.98] disabled:opacity-40"
             >
-              Simpan
+              Save
             </button>
             <button
               onClick={() => dispatch({ type: "RESET_STACKS" })}
               className="flex-1 rounded-xl bg-white/10 py-2.5 text-sm font-semibold text-stone-100 active:scale-95"
             >
-              Samakan chip ke {formatShort(state.buyIn)}
+              Reset chips to {formatShort(state.buyIn)}
             </button>
           </div>
           <p className="text-[11px] text-stone-500">
-            Blind 0/0 = tanpa taruhan paksa. &quot;Samakan chip&quot; menyetel semua pemain ke
-            chip awal (untuk mulai sesi baru).
+            Blinds 0/0 = no forced bets. &quot;Reset chips&quot; sets every player back to the
+            starting stack (to begin a new session).
           </p>
         </div>
       )}

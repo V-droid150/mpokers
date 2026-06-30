@@ -27,20 +27,20 @@ export default function Scoreboard({
       >
         <div className="mb-3 flex items-center justify-between">
           <h2 className="font-display text-xl font-bold text-vegas-gold">
-            Skor &amp; Untung-Rugi
+            Scoreboard &amp; P/L
           </h2>
           <button
             onClick={onClose}
             className="rounded-full bg-white/10 px-3 py-1 text-sm font-semibold text-stone-200 active:scale-95"
           >
-            Tutup
+            Close
           </button>
         </div>
 
         <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-3 gap-y-1 text-sm">
-          <div className="text-[10px] uppercase tracking-widest text-stone-400">Pemain</div>
-          <div className="text-right text-[10px] uppercase tracking-widest text-stone-400">Beli</div>
-          <div className="text-right text-[10px] uppercase tracking-widest text-stone-400">Chip</div>
+          <div className="text-[10px] uppercase tracking-widest text-stone-400">Player</div>
+          <div className="text-right text-[10px] uppercase tracking-widest text-stone-400">Buy-in</div>
+          <div className="text-right text-[10px] uppercase tracking-widest text-stone-400">Chips</div>
           <div className="text-right text-[10px] uppercase tracking-widest text-stone-400">Net</div>
 
           {rows.map((p) => {
@@ -68,7 +68,7 @@ export default function Scoreboard({
         </div>
 
         <p className="mt-3 text-[11px] text-stone-500">
-          Net = chip sekarang − total beli (buy-in &amp; top-up). Positif = untung.
+          Net = current chips − total buy-ins (buy-in &amp; top-up). Positive = profit.
         </p>
       </div>
     </div>
