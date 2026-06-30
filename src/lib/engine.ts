@@ -485,6 +485,20 @@ export function reduce(state: GameState, action: Action): GameState {
       break;
     }
 
+    case "RESET_STACKS": {
+      // Host levels everyone to the current buy-in (only between hands).
+      if (s.status === "playing") {
+        changed = false;
+        break;
+      }
+      for (const p of s.players) {
+        p.stack = s.buyIn;
+        p.buyInTotal = s.buyIn;
+      }
+      addLog(s, `Chip semua pemain disamakan ke ${formatRp(s.buyIn)}.`);
+      break;
+    }
+
     case "START_HAND": {
       if (s.status === "playing") {
         changed = false;

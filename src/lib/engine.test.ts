@@ -125,6 +125,40 @@ test("with no blinds a player can open a bet built from zero", () => {
   assert.equal(seat(s, 0).committed, 500);
 });
 
+test("host CONFIG updates blinds/buy-in in the lobby but not mid-hand", () => {
+  let s = withPlayers(3, DEFAULT_CONFIG);
+  s = reduce(s, { type: "CONFIG", smallBlind: 1000, bigBlind: 2000, buyIn: 50000 });
+  assert.equal(s.smallBlind, 1000);
+  assert.equal(s.bigBlind, 2000);
+  assert.equal(s.buyIn, 50000);
+  assert.equal(s.minRaise, 2000);
+  // Big blind is clamped to be >= small blind.
+  s = reduce(s, { type: "CONFIG", smallBlind: 5000, bigBlind: 1000, buyIn: 50000 });
+  assert.equal(s.bigBlind, 5000);
+  // Not allowed during a hand.
+  s = reduce(s, { type: "START_HAND" });
+  const before = s.version;
+  const after = reduce(s, { type: "CONFIG", smallBlind: 0, bigBlind: 0, buyIn: 1 });
+  assert.equal(after.version, before);
+});
+
+test("host RESET_STACKS levels every player to the buy-in between hands", () => {
+  let s = withPlayers(3, { smallBlind: 0, bigBlind: 0, buyIn: 50000 });
+  // Give players uneven stacks via top-ups.
+  s = reduce(s, { type: "REBUY", playerId: "p0", amount: 20000 });
+  assert.equal(seat(s, 0).stack, 70000);
+  s = reduce(s, { type: "RESET_STACKS" });
+  for (const p of s.players) {
+    assert.equal(p.stack, 50000);
+    assert.equal(p.buyInTotal, 50000);
+  }
+  // Not allowed during a hand.
+  s = reduce(s, { type: "START_HAND" });
+  const before = s.version;
+  const after = reduce(s, { type: "RESET_STACKS" });
+  assert.equal(after.version, before);
+});
+
 test("next hand rotates the dealer button", () => {
   let s = reduce(withPlayers(3), { type: "START_HAND" });
   assert.equal(s.dealerSeat, 0);

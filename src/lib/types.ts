@@ -61,6 +61,7 @@ export type Action =
   | { type: "SIT_OUT"; playerId: string; sittingOut: boolean }
   | { type: "REBUY"; playerId: string; amount: number }
   | { type: "CONFIG"; smallBlind: number; bigBlind: number; buyIn: number }
+  | { type: "RESET_STACKS" }
   | { type: "START_HAND" }
   | { type: "FOLD"; playerId: string }
   | { type: "CHECK"; playerId: string }

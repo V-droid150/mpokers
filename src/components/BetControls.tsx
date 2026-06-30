@@ -65,17 +65,22 @@ export default function BetControls({ state, myId, isHost, dispatch }: BetContro
       <div className="flex flex-col gap-3">
         <PlayerBar me={me} dispatch={dispatch} state={state} />
         {isHost ? (
-          <button
-            onClick={() => dispatch({ type: "START_HAND" })}
-            disabled={dealtCount < 2}
-            className="w-full rounded-2xl bg-gradient-to-b from-vegas-gold to-vegas-goldsoft py-4 text-lg font-bold text-black shadow-gold transition active:scale-[0.98] disabled:opacity-40"
-          >
-            {state.status === "handover" ? "Bagi Hand Berikutnya" : "Mulai Hand"}
-            {dealtCount < 2 && " (butuh 2 pemain)"}
-          </button>
+          <>
+            <HostSettings state={state} dispatch={dispatch} />
+            <button
+              onClick={() => dispatch({ type: "START_HAND" })}
+              disabled={dealtCount < 2}
+              className="w-full rounded-2xl bg-gradient-to-b from-vegas-gold to-vegas-goldsoft py-4 text-lg font-bold text-black shadow-gold transition active:scale-[0.98] disabled:opacity-40"
+            >
+              {state.status === "handover" ? "Bagi Hand Berikutnya" : "Mulai Hand"}
+              {dealtCount < 2 && " (butuh 2 pemain)"}
+            </button>
+          </>
         ) : (
-          <div className="rounded-2xl bg-black/50 py-4 text-center text-sm text-stone-300">
-            Menunggu host memulai hand…
+          <div className="rounded-2xl bg-black/50 py-3 text-center text-sm text-stone-300">
+            Blind {formatRp(state.smallBlind)}/{formatRp(state.bigBlind)} · chip awal{" "}
+            {formatRp(state.buyIn)}
+            <div className="mt-1 text-stone-400">Menunggu host memulai hand…</div>
           </div>
         )}
       </div>
@@ -302,5 +307,108 @@ function PlayerBar({
         </button>
       </div>
     </div>
+  );
+}
+
+// Host/dealer table settings: blinds, starting chips, and "level everyone".
+function HostSettings({
+  state,
+  dispatch,
+}: {
+  state: GameState;
+  dispatch: (action: Action) => void | Promise<void>;
+}) {
+  const [open, setOpen] = useState(false);
+  const [sb, setSb] = useState(state.smallBlind);
+  const [bb, setBb] = useState(state.bigBlind);
+  const [buyIn, setBuyIn] = useState(state.buyIn);
+
+  // Keep the form in sync if another device changes the config.
+  useEffect(() => {
+    setSb(state.smallBlind);
+    setBb(state.bigBlind);
+    setBuyIn(state.buyIn);
+  }, [state.smallBlind, state.bigBlind, state.buyIn]);
+
+  const dirty =
+    sb !== state.smallBlind || bb !== state.bigBlind || buyIn !== state.buyIn;
+
+  const save = () =>
+    dispatch({
+      type: "CONFIG",
+      smallBlind: Math.max(0, sb),
+      bigBlind: Math.max(0, bb),
+      buyIn: Math.max(0, buyIn),
+    });
+
+  return (
+    <div className="rounded-2xl bg-black/45">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center justify-between px-4 py-2.5 text-sm font-semibold text-stone-200"
+      >
+        <span>⚙️ Pengaturan Meja (host)</span>
+        <span className="text-xs text-stone-400">
+          {formatRp(state.smallBlind)}/{formatRp(state.bigBlind)} · {formatShort(state.buyIn)}{" "}
+          {open ? "▲" : "▼"}
+        </span>
+      </button>
+
+      {open && (
+        <div className="space-y-3 px-4 pb-4 pt-1">
+          <div className="grid grid-cols-3 gap-2">
+            <NumField label="Blind kecil" value={sb} onChange={setSb} />
+            <NumField label="Blind besar" value={bb} onChange={setBb} />
+            <NumField label="Chip awal" value={buyIn} onChange={setBuyIn} />
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={save}
+              disabled={!dirty}
+              className="flex-1 rounded-xl bg-gradient-to-b from-vegas-gold to-vegas-goldsoft py-2.5 text-sm font-bold text-black shadow-gold transition active:scale-[0.98] disabled:opacity-40"
+            >
+              Simpan
+            </button>
+            <button
+              onClick={() => dispatch({ type: "RESET_STACKS" })}
+              className="flex-1 rounded-xl bg-white/10 py-2.5 text-sm font-semibold text-stone-100 active:scale-95"
+            >
+              Samakan chip ke {formatShort(state.buyIn)}
+            </button>
+          </div>
+          <p className="text-[11px] text-stone-500">
+            Blind 0/0 = tanpa taruhan paksa. &quot;Samakan chip&quot; menyetel semua pemain ke
+            chip awal (untuk mulai sesi baru).
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function NumField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  onChange: (n: number) => void;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-[10px] uppercase tracking-widest text-stone-400">
+        {label}
+      </span>
+      <input
+        type="number"
+        inputMode="numeric"
+        min={0}
+        value={value}
+        onChange={(e) => onChange(Math.max(0, Number(e.target.value) || 0))}
+        className="w-full rounded-lg border border-white/10 bg-black/40 px-2 py-2 text-sm font-semibold tabular-nums outline-none focus:border-vegas-gold"
+      />
+    </label>
   );
 }
