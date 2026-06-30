@@ -282,7 +282,7 @@ function PlayView({
         </div>
       )}
 
-      <div className="min-h-0 flex-1 py-1">
+      <div className="min-h-0 flex-1 pb-1 pt-3">
         <PokerTable state={state} myId={activeId} />
       </div>
 

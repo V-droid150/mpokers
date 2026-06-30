@@ -21,8 +21,8 @@ const ROUND_LABEL: Record<GameState["round"], string> = {
 // Position `count` seats around an ellipse, starting at bottom-centre and going
 // clockwise. Returns percentage coordinates for absolute placement.
 function seatPositions(count: number): { x: number; y: number }[] {
-  const RX = 47;
-  const RY = 41;
+  const RX = 45;
+  const RY = 37;
   const positions: { x: number; y: number }[] = [];
   for (let i = 0; i < count; i++) {
     const deg = 90 - (360 / count) * i;

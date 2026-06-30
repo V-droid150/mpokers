@@ -20,6 +20,8 @@ function initials(name: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
+// Compact, box-free seat: just an avatar with name + stack beneath it. The turn
+// indicator is a gold glow on the avatar (no bulky card around the player).
 export default function PlayerSeat({
   player,
   isMe,
@@ -29,76 +31,80 @@ export default function PlayerSeat({
   blind,
 }: PlayerSeatProps) {
   const dimmed = player.folded || player.sittingOut;
+  const highlight = isToAct || isWinner;
 
   return (
-    <div className="flex flex-col items-center gap-1">
-      {/* Chips this player has committed to the current round. */}
+    <div className="flex w-[68px] flex-col items-center gap-0.5">
+      {/* Chips committed this round */}
       {player.committed > 0 && (
-        <ChipStack amount={player.committed} size={22} label={false} />
+        <ChipStack amount={player.committed} size={18} label={false} />
       )}
 
-      <motion.div
-        animate={
-          isToAct
-            ? { boxShadow: "0 0 0 3px rgba(245,197,66,0.9), 0 0 22px rgba(245,197,66,0.6)" }
-            : { boxShadow: "0 0 0 1px rgba(255,255,255,0.08)" }
-        }
-        transition={{ duration: 0.25 }}
-        className={`relative flex w-[78px] flex-col items-center rounded-2xl px-2 py-1.5 backdrop-blur-sm ${
-          isWinner
-            ? "bg-vegas-gold/25 ring-1 ring-vegas-gold"
-            : "bg-black/55"
-        } ${dimmed ? "opacity-50" : ""}`}
-      >
-        {/* Avatar */}
-        <div
-          className={`relative flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold ${
-            isMe ? "bg-vegas-gold text-black" : "bg-felt text-white"
-          }`}
-          style={{ boxShadow: "inset 0 -3px 6px rgba(0,0,0,0.4)" }}
+      <div className={`flex flex-col items-center ${dimmed ? "opacity-50" : ""}`}>
+        {/* Avatar with turn/winner glow */}
+        <motion.div
+          animate={{
+            boxShadow: highlight
+              ? "0 0 0 3px rgba(245,197,66,0.95), 0 0 16px rgba(245,197,66,0.55)"
+              : "0 0 0 2px rgba(0,0,0,0.45)",
+          }}
+          transition={{ duration: 0.25 }}
+          className="rounded-full"
         >
-          {initials(player.name)}
-          {isDealer && (
-            <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-white text-[10px] font-black text-black shadow">
-              D
-            </span>
-          )}
-          {blind && (
-            <span className="absolute -left-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-vegas-purple px-1 text-[9px] font-bold text-white shadow">
-              {blind}
-            </span>
-          )}
+          <div
+            className={`relative flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold ${
+              isMe || isWinner ? "bg-vegas-gold text-black" : "bg-felt text-white"
+            }`}
+            style={{ boxShadow: "inset 0 -3px 6px rgba(0,0,0,0.4)" }}
+          >
+            {initials(player.name)}
+            {isDealer && (
+              <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-white text-[10px] font-black text-black shadow">
+                D
+              </span>
+            )}
+            {blind && (
+              <span className="absolute -left-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-vegas-purple px-1 text-[9px] font-bold text-white shadow">
+                {blind}
+              </span>
+            )}
+          </div>
+        </motion.div>
+
+        {/* Name + stack — no box, just legible text on the felt */}
+        <div
+          className="mt-1 flex flex-col items-center leading-tight"
+          style={{ textShadow: "0 1px 3px rgba(0,0,0,0.95)" }}
+        >
+          <span className="max-w-[68px] truncate text-[11px] font-semibold text-white">
+            {player.name}
+            {isMe && " (kamu)"}
+          </span>
+          <span className="text-[11px] font-bold text-vegas-gold tabular-nums">
+            {formatRp(player.stack)}
+          </span>
         </div>
 
-        <span className="mt-0.5 max-w-full truncate text-[11px] font-semibold leading-tight">
-          {player.name}
-          {isMe && " (kamu)"}
-        </span>
-        <span className="text-[11px] font-bold text-vegas-gold tabular-nums">
-          {formatRp(player.stack)}
-        </span>
-
-        {!player.connected && (
-          <span className="text-[9px] text-stone-400">offline</span>
-        )}
-
-        {/* Status overlay */}
+        {/* Status chips */}
         {player.allIn && !player.folded && (
-          <span className="absolute -bottom-2 rounded-full bg-vegas-red px-2 text-[9px] font-bold uppercase tracking-wide text-white shadow">
+          <span className="mt-0.5 rounded-full bg-vegas-red px-1.5 text-[8px] font-bold uppercase tracking-wide text-white">
             All-in
           </span>
         )}
         {player.folded && !player.sittingOut && (
-          <span className="absolute -bottom-2 rounded-full bg-stone-700 px-2 text-[9px] font-bold uppercase tracking-wide text-stone-200 shadow">
+          <span className="mt-0.5 rounded-full bg-stone-700 px-1.5 text-[8px] font-bold uppercase tracking-wide text-stone-200">
             Fold
           </span>
         )}
         {player.sittingOut && (
-          <span className="absolute -bottom-2 rounded-full bg-stone-700 px-2 text-[9px] font-bold uppercase tracking-wide text-stone-200 shadow">
+          <span className="mt-0.5 rounded-full bg-stone-700 px-1.5 text-[8px] font-bold uppercase tracking-wide text-stone-200">
             Duduk
           </span>
         )}
-      </motion.div>
+        {!player.connected && !player.sittingOut && (
+          <span className="text-[9px] text-stone-400">offline</span>
+        )}
+      </div>
     </div>
   );
 }
