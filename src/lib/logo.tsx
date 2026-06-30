@@ -2,7 +2,21 @@
 // The Mpokers app logo, expressed as plain inline-styled JSX so it can be
 // rasterised to PNG icons by `next/og` (Satori). Two fanned ace cards with the
 // "Mpokers" wordmark slightly overlapping their lower edge, on a black field.
+//
+// Suits are inline SVG images (no symbol font, no twemoji network fetch) so the
+// icon renders deterministically inside the serverless function.
 import type { ReactElement } from "react";
+
+const HEART_D =
+  "M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z";
+const SPADE_D =
+  "M12 2C9 6 4 9.5 4 14a4 4 0 0 0 6.5 3.1C10.2 19 9.3 20.4 8 21h8c-1.3-.6-2.2-2-2.5-3.9A4 4 0 0 0 20 14c0-4.5-5-8-8-12z";
+
+function suitUri(kind: "spade" | "heart", color: string): string {
+  const d = kind === "heart" ? HEART_D : SPADE_D;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="${color}" d="${d}"/></svg>`;
+  return `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
+}
 
 function Card({
   s,
@@ -19,7 +33,9 @@ function Card({
   const h = s * 0.42;
   const r = s * 0.045;
   const color = red ? "#c0202e" : "#141414";
-  const suit = red ? "♥️" : "♠️";
+  const kind = red ? "heart" : "spade";
+  const pip = s * 0.18;
+  const corner = s * 0.055;
   return (
     <div
       style={{
@@ -39,7 +55,7 @@ function Card({
       }}
     >
       {/* Centre pip */}
-      <div style={{ display: "flex", fontSize: s * 0.17 }}>{suit}</div>
+      <img width={pip} height={pip} src={suitUri(kind, color)} alt="" />
       {/* Top-left corner index */}
       <div
         style={{
@@ -55,8 +71,8 @@ function Card({
           lineHeight: 1,
         }}
       >
-        <div style={{ fontSize: s * 0.062 }}>A</div>
-        <div style={{ fontSize: s * 0.05 }}>{suit}</div>
+        <div style={{ display: "flex", fontSize: s * 0.062 }}>A</div>
+        <img width={corner} height={corner} src={suitUri(kind, color)} alt="" />
       </div>
     </div>
   );
