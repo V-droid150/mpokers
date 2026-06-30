@@ -145,9 +145,9 @@ export default function RoomPage() {
   const isHost = true;
 
   return (
-    <main className="mx-auto flex min-h-[100dvh] max-w-md flex-col px-3 pb-4 pt-3">
+    <main className="mx-auto flex h-[100dvh] max-w-md flex-col overflow-hidden px-3 pb-2 pt-2">
       {/* Header */}
-      <div className="mb-2 flex items-center justify-between">
+      <div className="mb-1.5 flex shrink-0 items-center justify-between">
         <button onClick={leave} className="text-sm text-stone-400 active:text-stone-200">
           ← Keluar
         </button>
@@ -178,18 +178,20 @@ export default function RoomPage() {
         <Scoreboard players={state.players} onClose={() => setShowScore(false)} />
       )}
 
-      {/* Table */}
-      <div className="flex-1">
+      {/* Table — flexes to fill the space between header and controls */}
+      <div className="min-h-0 flex-1 py-1">
         <PokerTable state={state} myId={myId} />
       </div>
 
       {/* Log */}
-      <div className="my-2">
+      <div className="mb-1.5 shrink-0">
         <ActionLog log={state.log} />
       </div>
 
-      {/* Controls */}
-      <BetControls state={state} myId={myId} isHost={isHost} dispatch={dispatch} />
+      {/* Controls — always pinned at the bottom, no scrolling needed */}
+      <div className="shrink-0">
+        <BetControls state={state} myId={myId} isHost={isHost} dispatch={dispatch} />
+      </div>
     </main>
   );
 }

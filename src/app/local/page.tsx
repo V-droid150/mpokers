@@ -238,8 +238,8 @@ function PlayView({
     state.players.length < MAX_PLAYERS;
 
   return (
-    <main className="mx-auto flex min-h-[100dvh] max-w-md flex-col px-3 pb-4 pt-3">
-      <div className="mb-2 flex items-center justify-between">
+    <main className="mx-auto flex h-[100dvh] max-w-md flex-col overflow-hidden px-3 pb-2 pt-2">
+      <div className="mb-1.5 flex shrink-0 items-center justify-between">
         <button onClick={onExit} className="text-sm text-stone-400 active:text-stone-200">
           ← Keluar
         </button>
@@ -264,7 +264,7 @@ function PlayView({
       )}
 
       {canAddPlayers && (
-        <div className="mb-2 flex gap-2">
+        <div className="mb-1.5 flex shrink-0 gap-2">
           <input
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
@@ -282,15 +282,17 @@ function PlayView({
         </div>
       )}
 
-      <div className="flex-1">
+      <div className="min-h-0 flex-1 py-1">
         <PokerTable state={state} myId={activeId} />
       </div>
 
-      <div className="my-2">
+      <div className="mb-1.5 shrink-0">
         <ActionLog log={state.log} />
       </div>
 
-      <BetControls state={state} myId={activeId} isHost dispatch={dispatch} />
+      <div className="shrink-0">
+        <BetControls state={state} myId={activeId} isHost dispatch={dispatch} />
+      </div>
     </main>
   );
 }

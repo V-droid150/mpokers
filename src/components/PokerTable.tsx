@@ -47,7 +47,7 @@ export default function PokerTable({ state, myId }: PokerTableProps) {
   const inHand = state.status === "playing" || state.status === "showdown";
 
   return (
-    <div className="relative mx-auto aspect-[3/4] w-full max-w-md">
+    <div className="relative mx-auto aspect-[3/4] h-full max-h-full w-auto max-w-full">
       {/* Felt */}
       <div className="felt-surface absolute inset-3 rounded-[44%]" />
 

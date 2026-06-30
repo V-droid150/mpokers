@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { getStoredName, setStoredName } from "@/lib/identity";
 import { makeRoomCode } from "@/lib/format";
 import { isSupabaseConfigured } from "@/lib/supabase";
+import BrandMark from "@/components/BrandMark";
 
 export default function HomePage() {
   const router = useRouter();
@@ -33,9 +34,8 @@ export default function HomePage() {
   return (
     <main className="mx-auto flex min-h-[100dvh] max-w-md flex-col items-center justify-center gap-8 px-6 py-10">
       <header className="text-center">
-        <div className="mb-2 text-6xl">🎰</div>
-        <h1 className="font-display text-5xl font-black tracking-wide text-foil">Mpokers</h1>
-        <p className="mt-2 text-sm text-stone-400">
+        <BrandMark />
+        <p className="mt-3 text-sm text-stone-400">
           Poker tanpa kartu — atur chip &amp; taruhan. Vegas style, sampai 8 pemain.
         </p>
       </header>
