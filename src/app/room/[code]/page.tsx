@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useRoom } from "@/lib/useRoom";
 import { getPlayerId, getStoredName, setStoredName } from "@/lib/identity";
 import PokerTable from "@/components/PokerTable";
 import BetControls from "@/components/BetControls";
 import ActionLog from "@/components/ActionLog";
+import Scoreboard from "@/components/Scoreboard";
+import SoundToggle from "@/components/SoundToggle";
 
 export default function RoomPage() {
   const router = useRouter();
@@ -19,6 +21,7 @@ export default function RoomPage() {
   const [name, setName] = useState("");
   const [nameInput, setNameInput] = useState("");
   const [copied, setCopied] = useState(false);
+  const [showScore, setShowScore] = useState(false);
 
   useEffect(() => {
     setMyId(getPlayerId());
@@ -53,17 +56,6 @@ export default function RoomPage() {
     window.addEventListener("pagehide", onLeave);
     return () => window.removeEventListener("pagehide", onLeave);
   }, [myId, dispatch]);
-
-  const effectiveHostId = useMemo(() => {
-    if (!state) return "";
-    const hostPresent = state.players.some((p) => p.id === state.hostId);
-    if (hostPresent) return state.hostId;
-    // Fallback host: lowest-seat connected player.
-    const fallback = [...state.players]
-      .filter((p) => p.connected)
-      .sort((a, b) => a.seat - b.seat)[0];
-    return fallback?.id ?? state.hostId;
-  }, [state]);
 
   const copyCode = async () => {
     try {
@@ -148,7 +140,9 @@ export default function RoomPage() {
     );
   }
 
-  const isHost = myId === effectiveHostId;
+  // No designated host online — the real-life dealer runs the game, so any
+  // player can start hands, pick winners, and tweak table settings.
+  const isHost = true;
 
   return (
     <main className="mx-auto flex min-h-[100dvh] max-w-md flex-col px-3 pb-4 pt-3">
@@ -167,10 +161,22 @@ export default function RoomPage() {
           </span>
           <span className="text-[10px] text-stone-400">{copied ? "tersalin!" : "salin"}</span>
         </button>
-        <span className="w-12 text-right text-xs text-stone-500">
-          {state.players.length}/8
-        </span>
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-stone-500">{state.players.length}/8</span>
+          <button
+            onClick={() => setShowScore(true)}
+            aria-label="Skor untung-rugi"
+            className="rounded-full border border-white/10 bg-black/40 px-2.5 py-1.5 text-sm active:scale-95"
+          >
+            📊
+          </button>
+          <SoundToggle />
+        </div>
       </div>
+
+      {showScore && (
+        <Scoreboard players={state.players} onClose={() => setShowScore(false)} />
+      )}
 
       {/* Table */}
       <div className="flex-1">

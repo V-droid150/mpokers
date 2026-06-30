@@ -10,6 +10,8 @@ import { formatShort } from "@/lib/format";
 import PokerTable from "@/components/PokerTable";
 import BetControls from "@/components/BetControls";
 import ActionLog from "@/components/ActionLog";
+import Scoreboard from "@/components/Scoreboard";
+import SoundToggle from "@/components/SoundToggle";
 
 interface SeatDraft {
   id: string;
@@ -215,6 +217,7 @@ function PlayView({
   onExit: () => void;
 }) {
   const [newName, setNewName] = useState("");
+  const [showScore, setShowScore] = useState(false);
 
   const activeId = useMemo(() => {
     if (state.status === "playing" && state.toActSeat !== null) {
@@ -243,10 +246,22 @@ function PlayView({
         <span className="rounded-full border border-vegas-gold/40 bg-black/40 px-4 py-1.5 font-display text-sm font-bold tracking-[0.2em] text-vegas-gold">
           MAIN LOKAL
         </span>
-        <span className="w-12 text-right text-xs text-stone-500">
-          {state.players.length}/8
-        </span>
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-stone-500">{state.players.length}/8</span>
+          <button
+            onClick={() => setShowScore(true)}
+            aria-label="Skor untung-rugi"
+            className="rounded-full border border-white/10 bg-black/40 px-2.5 py-1.5 text-sm active:scale-95"
+          >
+            📊
+          </button>
+          <SoundToggle />
+        </div>
       </div>
+
+      {showScore && (
+        <Scoreboard players={state.players} onClose={() => setShowScore(false)} />
+      )}
 
       {canAddPlayers && (
         <div className="mb-2 flex gap-2">

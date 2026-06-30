@@ -14,6 +14,13 @@ Pemain memakai kartu fisik / aturannya sendiri — aplikasi mengurus chip, blind
 - 💰 **Chip = Rupiah** dengan top-up (re-buy) kapan saja antar-hand.
 - 📱 **Mobile-first**, didesain seperti aplikasi (no zoom, tap target besar).
 - 🎮 **Main Lokal (pass-and-play)** di `/local` — satu perangkat untuk semua pemain, tanpa perlu Supabase. Cocok untuk mencoba cepat.
+- 📊 **Skor untung-rugi** per pemain (beli vs chip sekarang) kapan saja.
+- 🔊 **Feedback chip** (suara + getar) saat menaruh chip, dengan tombol bisukan.
+- 🌐 **Online tanpa host** — siapa pun bisa memulai hand begitu pemain masuk; dealer diatur di dunia nyata.
+
+### Housekeeping (opsional)
+
+Untuk membersihkan meja lama otomatis, jalankan `supabase/cleanup.sql` (butuh extension `pg_cron`) — menghapus room yang idle > 24 jam tiap hari.
 
 ## Stack
 

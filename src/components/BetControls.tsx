@@ -6,6 +6,7 @@ import type { Action, GameState } from "@/lib/types";
 import { legalActions } from "@/lib/engine";
 import { CHIP_DEFS } from "@/lib/chips";
 import { formatRp, formatShort } from "@/lib/format";
+import { chipFeedback } from "@/lib/sound";
 import Chip from "./Chip";
 import ChipStack from "./ChipStack";
 
@@ -51,7 +52,11 @@ export default function BetControls({ state, myId, isHost, dispatch }: BetContro
 
   const addChip = (value: number) => {
     setBuilding(true);
-    setPending((prev) => Math.min(la.maxRaiseTo, prev + value));
+    setPending((prev) => {
+      const next = Math.min(la.maxRaiseTo, prev + value);
+      if (next !== prev) chipFeedback();
+      return next;
+    });
   };
 
   const trayAmount = Math.max(0, pending - me.committed);
@@ -347,7 +352,7 @@ function HostSettings({
         onClick={() => setOpen((o) => !o)}
         className="flex w-full items-center justify-between px-4 py-2.5 text-sm font-semibold text-stone-200"
       >
-        <span>⚙️ Pengaturan Meja (host)</span>
+        <span>⚙️ Pengaturan Meja</span>
         <span className="text-xs text-stone-400">
           {formatRp(state.smallBlind)}/{formatRp(state.bigBlind)} · {formatShort(state.buyIn)}{" "}
           {open ? "▲" : "▼"}
