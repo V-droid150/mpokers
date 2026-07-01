@@ -161,6 +161,15 @@ export default function RoomPage() {
 
   return (
     <main className="mx-auto flex h-[100dvh] max-w-md flex-col overflow-hidden px-3 pb-2 pt-2">
+      {/* Transient sync-error toast (auto-clears on the next successful update) */}
+      {error && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-3 z-50 mx-auto max-w-md px-4">
+          <div className="rounded-xl bg-red-600/90 px-4 py-2 text-center text-sm font-medium text-white shadow-lg">
+            {error}
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="mb-1.5 flex shrink-0 items-center justify-between">
         <button onClick={leave} className="text-sm text-stone-400 active:text-stone-200">

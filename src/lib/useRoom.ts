@@ -44,6 +44,7 @@ export function useRoom(code: string, opts: UseRoomOptions) {
         stateRef.current = next;
         setState(next);
         setStatus("ready");
+        setError(null);
       }
     };
 
@@ -141,6 +142,7 @@ export function useRoom(code: string, opts: UseRoomOptions) {
         if (data && data.length > 0) {
           stateRef.current = next;
           setState(next);
+          setError(null);
           return;
         }
 
@@ -156,6 +158,9 @@ export function useRoom(code: string, opts: UseRoomOptions) {
         }
         await new Promise((r) => setTimeout(r, 70));
       }
+
+      // Every attempt hit a version conflict — don't drop the action silently.
+      setError("Couldn't sync your action — please try again.");
     },
     [code]
   );

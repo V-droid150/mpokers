@@ -17,15 +17,6 @@ export const CHIP_DEFS: ChipDef[] = [
   { value: 500000, base: "#f5c542", ring: "#7c2d12", text: "#7c2d12" },
 ];
 
-export function chipFor(value: number): ChipDef {
-  // Nearest defined denomination at or below the value (fallback to smallest).
-  let pick = CHIP_DEFS[0];
-  for (const def of CHIP_DEFS) {
-    if (value >= def.value) pick = def;
-  }
-  return pick;
-}
-
 // Greedy breakdown of an amount into the fewest chips, for rendering a stack.
 export function breakdown(amount: number): ChipDef[] {
   let remaining = Math.round(amount);

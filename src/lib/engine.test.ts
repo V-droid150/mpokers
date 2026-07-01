@@ -88,6 +88,23 @@ test("heads-up: dealer posts SB and acts first pre-flop", () => {
   assert.equal(s.toActSeat, 0);
 });
 
+test("heads-up: SB all-in from the blind leaves BB to act (not stuck)", () => {
+  // The dealer/SB is short: posting the small blind puts them all-in, while BB
+  // still has chips. Action must pass to BB rather than leaving toActSeat null.
+  let s = initialState("host", { smallBlind: 0, bigBlind: 0, buyIn: 2000 });
+  s = reduce(s, { type: "JOIN", playerId: "p0", name: "P0" }); // seat 0, stack 2000
+  s = reduce(s, { type: "CONFIG", smallBlind: 5000, bigBlind: 10000, buyIn: 100000 });
+  s = reduce(s, { type: "JOIN", playerId: "p1", name: "P1" }); // seat 1, stack 100000
+  s = reduce(s, { type: "START_HAND" });
+
+  assert.equal(s.dealerSeat, 0);
+  assert.equal(seat(s, 0).allIn, true); // SB posted 2000 -> all-in
+  assert.equal(seat(s, 0).stack, 0);
+  assert.equal(s.status, "playing");
+  assert.equal(s.toActSeat, 1); // BB must act (was null before the fix)
+  assert.equal(legalActions(s, "p1").isYourTurn, true);
+});
+
 test("all-in call drives the hand to showdown, host awards the pot", () => {
   let s = reduce(withPlayers(2), { type: "START_HAND" });
   s = reduce(s, { type: "ALL_IN", playerId: "p0" }); // dealer shoves

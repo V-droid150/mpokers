@@ -8,11 +8,9 @@ import ChipStack from "./ChipStack";
 interface PlayerSeatProps {
   player: Player;
   isMe: boolean;
-  isHost?: boolean;
   isDealer: boolean;
   isToAct: boolean;
   isWinner: boolean;
-  blind?: "SB" | "BB" | null;
   // When the seat is in the top half of the table, the name goes above the
   // avatar (outer edge) and committed chips below (toward the pot) — and the
   // reverse for bottom seats. Keeps text off the centre labels.
@@ -28,11 +26,9 @@ function initials(name: string): string {
 export default function PlayerSeat({
   player,
   isMe,
-  isHost,
   isDealer,
   isToAct,
   isWinner,
-  blind,
   topHalf,
 }: PlayerSeatProps) {
   const dimmed = player.folded || player.sittingOut;
@@ -60,23 +56,9 @@ export default function PlayerSeat({
         style={{ boxShadow: "inset 0 -2px 5px rgba(0,0,0,0.4)" }}
       >
         {initials(player.name)}
-        {isHost && (
-          <span
-            className="absolute -left-1.5 -top-2 text-[11px] leading-none drop-shadow"
-            aria-label="Host"
-            title="Host"
-          >
-            👑
-          </span>
-        )}
         {isDealer && (
           <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-white text-[8px] font-black text-black shadow">
             D
-          </span>
-        )}
-        {blind && (
-          <span className="absolute -left-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-vegas-purple px-1 text-[8px] font-bold text-white shadow">
-            {blind}
           </span>
         )}
       </div>

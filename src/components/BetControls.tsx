@@ -27,12 +27,10 @@ export default function BetControls({ state, myId, isHost, dispatch }: BetContro
 
   // Raise builder target (total committed this round).
   const [pending, setPending] = useState(la.minRaiseTo);
-  const [building, setBuilding] = useState(false);
 
   // Reset the builder whenever it becomes a new decision point.
   useEffect(() => {
     setPending(la.minRaiseTo);
-    setBuilding(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.toActSeat, state.currentBet, state.handId, state.round, state.status]);
 
@@ -98,7 +96,6 @@ export default function BetControls({ state, myId, isHost, dispatch }: BetContro
   }
 
   const addChip = (value: number) => {
-    setBuilding(true);
     setPending((prev) => {
       const next = Math.min(la.maxRaiseTo, prev + value);
       if (next !== prev) chipFeedback();
@@ -229,10 +226,7 @@ export default function BetControls({ state, myId, isHost, dispatch }: BetContro
             max={la.maxRaiseTo}
             step={state.bigBlind > 0 ? state.bigBlind : 1000}
             value={pending}
-            onChange={(e) => {
-              setBuilding(true);
-              setPending(Number(e.target.value));
-            }}
+            onChange={(e) => setPending(Number(e.target.value))}
             className="w-full accent-vegas-gold"
           />
 

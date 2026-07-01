@@ -184,11 +184,11 @@ function streetLabel(round: GameState["round"]): string {
 function advanceStreet(s: GameState): void {
   const idx = ROUND_ORDER.indexOf(s.round);
   s.round = ROUND_ORDER[Math.min(idx + 1, ROUND_ORDER.length - 1)];
+  // Clear every player's per-round commitment — including folded players, so
+  // their chips from an earlier street don't linger on the felt as "ghost" bets.
   for (const p of s.players) {
-    if (!p.folded) {
-      p.committed = 0;
-      p.hasActed = false;
-    }
+    p.committed = 0;
+    p.hasActed = false;
   }
   s.currentBet = 0;
   s.minRaise = minRaiseFor(s.bigBlind);
@@ -312,12 +312,15 @@ function startHand(s: GameState): void {
   s.minRaise = minRaiseFor(s.bigBlind);
   s.lastAggressorSeat = bbSeat;
 
-  // If the first-to-act seat can't act (e.g. all-in from blinds), resolve.
+  // If the first-to-act seat can't act (e.g. it's the SB who went all-in just
+  // by posting the blind), let resolve find the next actor. Seed it from the
+  // small blind so the search wraps forward to the big blind (seeding from BB
+  // would wrap into the all-in SB and wrongly leave toActSeat = null).
   if (firstToAct !== null && getBySeat(s, firstToAct) && canAct(getBySeat(s, firstToAct)!)) {
     s.toActSeat = firstToAct;
   } else {
     s.toActSeat = firstToAct;
-    resolve(s, bbSeat);
+    resolve(s, sbSeat);
   }
 }
 
@@ -436,11 +439,13 @@ export function reduce(state: GameState, action: Action): GameState {
         break;
       }
       p.sittingOut = action.sittingOut;
-      // If sitting out mid-hand and it was their turn, fold them.
+      // If sitting out mid-hand, fold them. Re-resolve when it was their turn,
+      // or when their fold leaves a single live player (who then wins the pot).
       if (action.sittingOut && s.status === "playing" && !p.folded) {
         p.folded = true;
         p.hasActed = true;
-        if (s.toActSeat === p.seat) {
+        const onePlayerLeft = s.players.filter((x) => !x.folded).length <= 1;
+        if (s.toActSeat === p.seat || onePlayerLeft) {
           resolve(s, p.seat);
         }
       }
@@ -464,7 +469,10 @@ export function reduce(state: GameState, action: Action): GameState {
       }
       s.players = s.players.filter((x) => x.id !== action.playerId);
       addLog(s, `${name} left the table.`);
-      if (wasTurn) resolve(s, seat);
+      // Re-resolve when the leaver was to act, or when their departure leaves a
+      // single live player (who wins the pot) — otherwise leave the turn as-is.
+      const onePlayerLeft = s.players.filter((x) => !x.folded).length <= 1;
+      if (wasTurn || (s.status === "playing" && onePlayerLeft)) resolve(s, seat);
       break;
     }
 

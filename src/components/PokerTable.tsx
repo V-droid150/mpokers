@@ -9,7 +9,6 @@ import ChipStack from "./ChipStack";
 interface PokerTableProps {
   state: GameState;
   myId: string;
-  hostId?: string; // online: highlights the host seat with a crown
 }
 
 const ROUND_LABEL: Record<GameState["round"], string> = {
@@ -36,7 +35,7 @@ function seatPositions(count: number): { x: number; y: number }[] {
   return positions;
 }
 
-export default function PokerTable({ state, myId, hostId }: PokerTableProps) {
+export default function PokerTable({ state, myId }: PokerTableProps) {
   const sorted = [...state.players].sort((a, b) => a.seat - b.seat);
   const meIdx = sorted.findIndex((p) => p.id === myId);
 
@@ -85,11 +84,9 @@ export default function PokerTable({ state, myId, hostId }: PokerTableProps) {
             <PlayerSeat
               player={player}
               isMe={player.id === myId}
-              isHost={hostId != null && player.id === hostId}
               isDealer={inHand && player.seat === state.dealerSeat}
               isToAct={state.status === "playing" && state.toActSeat === player.seat}
               isWinner={state.status === "handover" && state.winners.includes(player.seat)}
-              blind={null}
               topHalf={pos.y < 50}
             />
           </div>
