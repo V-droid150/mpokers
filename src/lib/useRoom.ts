@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { isSupabaseConfigured, ROOMS_TABLE, supabase } from "./supabase";
-import { DEFAULT_CONFIG, initialState, reduce } from "./engine";
+import { reduce } from "./engine";
+import { getAccessToken } from "./auth";
 import type { Action, GameState } from "./types";
 
 export type RoomStatus =
@@ -12,13 +13,7 @@ export type RoomStatus =
   | "ready"
   | "error";
 
-interface UseRoomOptions {
-  create?: boolean;
-  hostId?: string;
-  hostName?: string;
-}
-
-export function useRoom(code: string, opts: UseRoomOptions) {
+export function useRoom(code: string) {
   const [state, setState] = useState<GameState | null>(null);
   const [status, setStatus] = useState<RoomStatus>(
     isSupabaseConfigured ? "loading" : "unconfigured"
@@ -27,10 +22,6 @@ export function useRoom(code: string, opts: UseRoomOptions) {
 
   const stateRef = useRef<GameState | null>(null);
   stateRef.current = state;
-
-  // Keep create/host options in a ref so changing them doesn't resubscribe.
-  const optsRef = useRef(opts);
-  optsRef.current = opts;
 
   useEffect(() => {
     if (!isSupabaseConfigured || !supabase || !code) return;
@@ -62,36 +53,9 @@ export function useRoom(code: string, opts: UseRoomOptions) {
       }
       if (data?.state) {
         applyRemote(data.state as GameState);
-        return;
+      } else {
+        setStatus("missing");
       }
-      if (optsRef.current.create && optsRef.current.hostId) {
-        const fresh = initialState(
-          optsRef.current.hostId,
-          DEFAULT_CONFIG,
-          optsRef.current.hostName || ""
-        );
-        const { error: insErr } = await client
-          .from(ROOMS_TABLE)
-          .insert({ code, state: fresh });
-        if (!active) return;
-        if (insErr) {
-          // Possibly created concurrently — try reading it back.
-          const { data: again } = await client
-            .from(ROOMS_TABLE)
-            .select("state")
-            .eq("code", code)
-            .maybeSingle();
-          if (again?.state) applyRemote(again.state as GameState);
-          else {
-            setError(insErr.message);
-            setStatus("error");
-          }
-        } else {
-          applyRemote(fresh);
-        }
-        return;
-      }
-      setStatus("missing");
     };
 
     void init();
@@ -118,49 +82,48 @@ export function useRoom(code: string, opts: UseRoomOptions) {
     };
   }, [code]);
 
+  // Every mutation goes through the authoritative server endpoint. We apply the
+  // action optimistically for snappy UX, then POST; realtime delivers the
+  // server's authoritative result to all clients. On failure we revert.
   const dispatch = useCallback(
     async (action: Action) => {
-      if (!supabase) return;
-      const client = supabase;
-      for (let attempt = 0; attempt < 4; attempt++) {
-        const current = stateRef.current;
-        if (!current) return;
-        const next = reduce(current, action);
-        if (next === current) return; // illegal / no-op
+      const cur = stateRef.current;
+      if (!cur || !supabase) return;
 
-        const { data, error: updErr } = await client
-          .from(ROOMS_TABLE)
-          .update({ state: next, updated_at: new Date().toISOString() })
-          .eq("code", code)
-          .filter("state->>version", "eq", String(current.version))
-          .select("state");
-
-        if (updErr) {
-          setError(updErr.message);
-          return;
-        }
-        if (data && data.length > 0) {
-          stateRef.current = next;
-          setState(next);
-          setError(null);
-          return;
-        }
-
-        // Version conflict: someone else wrote first. Refetch and retry.
-        const { data: latest } = await client
-          .from(ROOMS_TABLE)
-          .select("state")
-          .eq("code", code)
-          .maybeSingle();
-        if (latest?.state) {
-          stateRef.current = latest.state as GameState;
-          setState(latest.state as GameState);
-        }
-        await new Promise((r) => setTimeout(r, 70));
+      const optimistic = reduce(cur, action);
+      if (optimistic !== cur) {
+        stateRef.current = optimistic;
+        setState(optimistic);
       }
 
-      // Every attempt hit a version conflict — don't drop the action silently.
-      setError("Couldn't sync your action — please try again.");
+      try {
+        const token = await getAccessToken();
+        const res = await fetch("/api/action", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ code, action }),
+        });
+        if (!res.ok) {
+          setError("Couldn't sync your action — please try again.");
+          // Revert the optimistic change to the authoritative state.
+          const { data } = await supabase
+            .from(ROOMS_TABLE)
+            .select("state")
+            .eq("code", code)
+            .maybeSingle();
+          if (data?.state) {
+            stateRef.current = data.state as GameState;
+            setState(data.state as GameState);
+          }
+          return;
+        }
+        setError(null);
+      } catch {
+        setError("Network error — please try again.");
+      }
     },
     [code]
   );

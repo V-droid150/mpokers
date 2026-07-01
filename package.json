@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "tsc -p tsconfig.test.json && node --test dist-test/lib/engine.test.js"
+    "test": "tsc -p tsconfig.test.json && node --test dist-test/lib/engine.test.js dist-test/lib/authorize.test.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",

@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getStoredName, setStoredName } from "@/lib/identity";
-import { makeRoomCode } from "@/lib/format";
 import { isSupabaseConfigured } from "@/lib/supabase";
+import { ensureAnonAuth, getAccessToken } from "@/lib/auth";
 import BrandMark from "@/components/BrandMark";
 import MenuBackground from "@/components/MenuBackground";
 
@@ -13,6 +13,8 @@ export default function HomePage() {
   const [name, setName] = useState("");
   const [joinCode, setJoinCode] = useState("");
   const [mode, setMode] = useState<"menu" | "join">("menu");
+  const [busy, setBusy] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   useEffect(() => {
     setName(getStoredName());
@@ -20,14 +22,42 @@ export default function HomePage() {
 
   const ready = name.trim().length >= 2;
 
-  const create = () => {
-    if (!ready) return;
+  const create = async () => {
+    if (!ready || busy) return;
     setStoredName(name);
-    router.push(`/room/${makeRoomCode()}?host=1`);
+    setBusy(true);
+    setCreateError(null);
+    try {
+      const uid = await ensureAnonAuth();
+      const token = await getAccessToken();
+      if (!uid || !token) {
+        setCreateError("Couldn't sign in — check Supabase configuration.");
+        setBusy(false);
+        return;
+      }
+      const res = await fetch("/api/room", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ hostName: name.trim() }),
+      });
+      if (!res.ok) {
+        setCreateError("Couldn't create the table — please try again.");
+        setBusy(false);
+        return;
+      }
+      const { code } = (await res.json()) as { code: string };
+      router.push(`/room/${code}`);
+    } catch {
+      setCreateError("Network error — please try again.");
+      setBusy(false);
+    }
   };
 
   const join = () => {
-    if (!ready || joinCode.trim().length < 3) return;
+    if (!ready || joinCode.trim().length < 4) return;
     setStoredName(name);
     router.push(`/room/${joinCode.trim().toUpperCase()}`);
   };
@@ -70,11 +100,14 @@ export default function HomePage() {
           <div className="space-y-3">
             <button
               onClick={create}
-              disabled={!ready}
+              disabled={!ready || busy}
               className="w-full rounded-2xl bg-gradient-to-b from-vegas-gold to-vegas-goldsoft py-4 text-lg font-bold text-black shadow-gold transition active:scale-[0.98] disabled:opacity-40"
             >
-              Create New Table
+              {busy ? "Creating…" : "Create New Table"}
             </button>
+            {createError && (
+              <p className="text-center text-xs text-red-300">{createError}</p>
+            )}
             <button
               onClick={() => setMode("join")}
               disabled={!ready}
@@ -94,13 +127,13 @@ export default function HomePage() {
             <input
               value={joinCode}
               onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-              maxLength={4}
+              maxLength={6}
               placeholder="TABLE CODE"
               className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-center text-2xl font-black tracking-[0.4em] outline-none focus:border-vegas-gold"
             />
             <button
               onClick={join}
-              disabled={!ready || joinCode.trim().length < 3}
+              disabled={!ready || joinCode.trim().length < 4}
               className="w-full rounded-2xl bg-gradient-to-b from-vegas-gold to-vegas-goldsoft py-4 text-lg font-bold text-black shadow-gold transition active:scale-[0.98] disabled:opacity-40"
             >
               Enter

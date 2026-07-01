@@ -9,6 +9,12 @@ export const isSupabaseConfigured = Boolean(url && anonKey);
 // helpful setup screen instead of crashing during build/first run.
 export const supabase = isSupabaseConfigured
   ? createClient(url as string, anonKey as string, {
+      auth: {
+        // Persist the anonymous-auth session so each device keeps a stable uid.
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: false,
+      },
       realtime: { params: { eventsPerSecond: 10 } },
     })
   : null;

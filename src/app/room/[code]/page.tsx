@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useRoom } from "@/lib/useRoom";
-import { getPlayerId, getStoredName, setStoredName } from "@/lib/identity";
+import { getStoredName, setStoredName } from "@/lib/identity";
+import { ensureAnonAuth } from "@/lib/auth";
 import PokerTable from "@/components/PokerTable";
 import BetControls from "@/components/BetControls";
 import ActionLog from "@/components/ActionLog";
@@ -14,9 +15,7 @@ import MenuBackground from "@/components/MenuBackground";
 export default function RoomPage() {
   const router = useRouter();
   const params = useParams<{ code: string }>();
-  const searchParams = useSearchParams();
   const code = (params.code || "").toUpperCase();
-  const isHostCreator = searchParams.get("host") === "1";
 
   const [myId, setMyId] = useState("");
   const [name, setName] = useState("");
@@ -24,16 +23,20 @@ export default function RoomPage() {
   const [copied, setCopied] = useState(false);
   const [showScore, setShowScore] = useState(false);
 
+  // Identity is the verified anonymous-auth uid, so the server can trust it.
   useEffect(() => {
-    setMyId(getPlayerId());
+    let active = true;
+    void (async () => {
+      const uid = await ensureAnonAuth();
+      if (active && uid) setMyId(uid);
+    })();
     setName(getStoredName());
+    return () => {
+      active = false;
+    };
   }, []);
 
-  const { state, status, error, dispatch } = useRoom(code, {
-    create: isHostCreator,
-    hostId: myId,
-    hostName: name,
-  });
+  const { state, status, error, dispatch } = useRoom(code);
 
   // Join the table once the room is loaded and we have a name — UNLESS we're the
   // dealer, who runs the table without taking a seat or holding chips.
