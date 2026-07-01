@@ -38,11 +38,17 @@ export const DEFAULT_CONFIG: GameConfig = {
   buyIn: 100000,
 };
 
-export function initialState(hostId: string, config: GameConfig = DEFAULT_CONFIG): GameState {
+export function initialState(
+  hostId: string,
+  config: GameConfig = DEFAULT_CONFIG,
+  hostName = ""
+): GameState {
   return {
     version: 1,
     status: "lobby",
     hostId,
+    hostName,
+    feeCollected: 0,
     handId: 0,
     players: [],
     dealerSeat: 0,
@@ -126,15 +132,11 @@ function lowestFreeSeat(s: GameState): number {
   return -1;
 }
 
-// Every online room needs a host (the banker who awards pots and runs the
-// table). If the current host is gone, hand the role to a remaining player —
-// preferring someone connected — so the game never gets stuck.
-function ensureHost(s: GameState): void {
-  if (s.players.length === 0) return;
-  if (s.players.some((p) => p.id === s.hostId)) return;
-  const next = s.players.find((p) => p.connected) ?? s.players[0];
-  s.hostId = next.id;
-  addLog(s, `${next.name} is now the host.`);
+// The dealer runs the table but is not one of the seated players. A room "has a
+// dealer" when the host id doesn't belong to anyone in `players` (the online
+// setup). In pass-and-play the host is just the acting player, so there's none.
+function hasDealer(s: GameState): boolean {
+  return !s.players.some((p) => p.id === s.hostId);
 }
 
 // ---------- pot resolution ----------
@@ -403,7 +405,6 @@ export function reduce(state: GameState, action: Action): GameState {
         buyInTotal: s.buyIn,
       };
       s.players.push(player);
-      ensureHost(s);
       addLog(s, `${player.name} joined (seat ${seat + 1}).`);
       break;
     }
@@ -463,7 +464,6 @@ export function reduce(state: GameState, action: Action): GameState {
       }
       s.players = s.players.filter((x) => x.id !== action.playerId);
       addLog(s, `${name} left the table.`);
-      ensureHost(s);
       if (wasTurn) resolve(s, seat);
       break;
     }
@@ -542,6 +542,38 @@ export function reduce(state: GameState, action: Action): GameState {
         break;
       }
       awardPot(s, winners);
+      break;
+    }
+
+    case "PAY_FEE": {
+      // A winner tips the dealer, any amount, after a hand is awarded. Only
+      // valid when there's a real (non-playing) dealer and the payer just won.
+      const p = getById(s, action.playerId);
+      const amt = Math.round(action.amount);
+      if (
+        !p ||
+        amt <= 0 ||
+        amt > p.stack ||
+        s.status !== "handover" ||
+        !hasDealer(s) ||
+        !s.winners.includes(p.seat)
+      ) {
+        changed = false;
+        break;
+      }
+      p.stack -= amt;
+      s.feeCollected += amt;
+      addLog(s, `${p.name} tipped the dealer ${formatRp(amt)}.`);
+      break;
+    }
+
+    case "SET_HOST_NAME": {
+      // Lets the dealer's device record/refresh its display name in the state.
+      if (action.hostId !== s.hostId || !action.name || s.hostName === action.name) {
+        changed = false;
+        break;
+      }
+      s.hostName = action.name;
       break;
     }
 

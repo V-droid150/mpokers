@@ -33,7 +33,9 @@ export interface LogEntry {
 export interface GameState {
   version: number; // optimistic-concurrency guard
   status: GameStatus;
-  hostId: string;
+  hostId: string; // the dealer/banker — runs the table but does NOT play
+  hostName: string; // the dealer's display name (they aren't in `players`)
+  feeCollected: number; // running total of tips winners have given the dealer
   handId: number;
   players: Player[];
   dealerSeat: number;
@@ -69,4 +71,6 @@ export type Action =
   | { type: "RAISE"; playerId: string; total: number } // total committed this round
   | { type: "ALL_IN"; playerId: string }
   | { type: "AWARD"; winnerSeats: number[] }
+  | { type: "PAY_FEE"; playerId: string; amount: number } // winner tips the dealer
+  | { type: "SET_HOST_NAME"; hostId: string; name: string }
   | { type: "NEXT_HAND" };

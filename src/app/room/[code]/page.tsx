@@ -32,12 +32,15 @@ export default function RoomPage() {
   const { state, status, error, dispatch } = useRoom(code, {
     create: isHostCreator,
     hostId: myId,
+    hostName: name,
   });
 
-  // Join the table once the room is loaded and we have a name.
+  // Join the table once the room is loaded and we have a name — UNLESS we're the
+  // dealer, who runs the table without taking a seat or holding chips.
   const joinedRef = useRef(false);
   useEffect(() => {
     if (!state || !myId || !name || joinedRef.current) return;
+    if (state.hostId === myId) return; // dealer: never joins as a player
     const already = state.players.some((p) => p.id === myId);
     if (!already) {
       joinedRef.current = true;
@@ -45,6 +48,15 @@ export default function RoomPage() {
     } else {
       joinedRef.current = true;
       void dispatch({ type: "SET_CONNECTED", playerId: myId, connected: true });
+    }
+  }, [state, myId, name, dispatch]);
+
+  // Keep the dealer's display name recorded in the shared state so other
+  // devices can see who the banker is (the dealer isn't in `players`).
+  useEffect(() => {
+    if (!state || !myId || !name) return;
+    if (state.hostId === myId && state.hostName !== name) {
+      void dispatch({ type: "SET_HOST_NAME", hostId: myId, name });
     }
   }, [state, myId, name, dispatch]);
 
@@ -142,11 +154,10 @@ export default function RoomPage() {
     );
   }
 
-  // Every online room has a designated host (the room creator, or whoever the
-  // role transfers to if they leave). Only the host runs the table — starting
-  // hands, tweaking settings, and crucially awarding the pot to the winner.
+  // The dealer/banker (room creator) runs the table but does not play or hold
+  // chips: they start hands, tweak settings, and award the pot to the winner.
   const isHost = myId === state.hostId;
-  const hostName = state.players.find((p) => p.id === state.hostId)?.name ?? null;
+  const hostName = state.hostName || null;
 
   return (
     <main className="mx-auto flex h-[100dvh] max-w-md flex-col overflow-hidden px-3 pb-2 pt-2">
@@ -178,22 +189,29 @@ export default function RoomPage() {
         </div>
       </div>
 
-      {/* Host indicator */}
+      {/* Dealer indicator */}
       <div className="mb-0.5 shrink-0 text-center text-[11px] text-stone-400">
         {isHost ? (
-          <span className="text-vegas-gold">👑 You are the host — you run the table.</span>
+          <span className="text-vegas-gold">
+            👑 You are the dealer — you run the table &amp; don&apos;t play.
+          </span>
         ) : (
-          <span>👑 Host: {hostName ?? "—"} · only the host awards the pot.</span>
+          <span>👑 Dealer: {hostName ?? "—"} · pays out the winning pot.</span>
         )}
       </div>
 
       {showScore && (
-        <Scoreboard players={state.players} onClose={() => setShowScore(false)} />
+        <Scoreboard
+          players={state.players}
+          dealerName={state.hostName}
+          feeCollected={state.feeCollected}
+          onClose={() => setShowScore(false)}
+        />
       )}
 
       {/* Table — flexes to fill the space between header and controls */}
       <div className="min-h-0 flex-1 pb-1 pt-3">
-        <PokerTable state={state} myId={myId} hostId={state.hostId} />
+        <PokerTable state={state} myId={myId} />
       </div>
 
       {/* Log — one minimal line */}

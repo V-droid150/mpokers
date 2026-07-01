@@ -15,6 +15,7 @@ export type RoomStatus =
 interface UseRoomOptions {
   create?: boolean;
   hostId?: string;
+  hostName?: string;
 }
 
 export function useRoom(code: string, opts: UseRoomOptions) {
@@ -63,7 +64,11 @@ export function useRoom(code: string, opts: UseRoomOptions) {
         return;
       }
       if (optsRef.current.create && optsRef.current.hostId) {
-        const fresh = initialState(optsRef.current.hostId, DEFAULT_CONFIG);
+        const fresh = initialState(
+          optsRef.current.hostId,
+          DEFAULT_CONFIG,
+          optsRef.current.hostName || ""
+        );
         const { error: insErr } = await client
           .from(ROOMS_TABLE)
           .insert({ code, state: fresh });

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import type { Action, GameState } from "@/lib/types";
+import type { Action, GameState, Player } from "@/lib/types";
 import { legalActions } from "@/lib/engine";
 import { CHIP_DEFS } from "@/lib/chips";
 import { formatRp, formatShort } from "@/lib/format";
@@ -19,6 +19,10 @@ interface BetControlsProps {
 
 export default function BetControls({ state, myId, isHost, dispatch }: BetControlsProps) {
   const me = state.players.find((p) => p.id === myId);
+  // A room "has a dealer" when the host isn't one of the seated players (online).
+  const roomHasDealer = !state.players.some((p) => p.id === state.hostId);
+  // The non-playing dealer's own device: host, but not a seated player.
+  const isDealer = isHost && !me;
   const la = legalActions(state, myId);
 
   // Raise builder target (total committed this round).
@@ -32,7 +36,7 @@ export default function BetControls({ state, myId, isHost, dispatch }: BetContro
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.toActSeat, state.currentBet, state.handId, state.round, state.status]);
 
-  // Winner selection at showdown (host only).
+  // Winner selection at showdown (dealer / acting host only).
   const livePlayers = useMemo(
     () => state.players.filter((p) => !p.folded),
     [state.players]
@@ -41,6 +45,49 @@ export default function BetControls({ state, myId, isHost, dispatch }: BetContro
   useEffect(() => {
     setWinners(livePlayers.length === 1 ? [livePlayers[0].seat] : []);
   }, [state.status, state.handId, livePlayers]);
+
+  const dealtCount = state.players.filter((p) => !p.sittingOut && p.stack > 0).length;
+
+  // ================= DEALER (online, non-playing banker) =================
+  if (isDealer) {
+    if (state.status === "showdown") {
+      return (
+        <ShowdownPicker
+          state={state}
+          livePlayers={livePlayers}
+          winners={winners}
+          setWinners={setWinners}
+          dispatch={dispatch}
+        />
+      );
+    }
+    if (state.status === "playing") {
+      const toAct = state.players.find((p) => p.seat === state.toActSeat);
+      return (
+        <div className="flex flex-col gap-3">
+          <DealerBar state={state} />
+          <div className="rounded-2xl bg-black/50 py-4 text-center text-sm text-stone-300">
+            Hand in progress — {toAct ? `${toAct.name} to act…` : "waiting…"}
+          </div>
+        </div>
+      );
+    }
+    // lobby / handover
+    return (
+      <div className="flex flex-col gap-3">
+        <DealerBar state={state} />
+        <HostSettings state={state} dispatch={dispatch} />
+        <button
+          onClick={() => dispatch({ type: "START_HAND" })}
+          disabled={dealtCount < 2}
+          className="w-full rounded-2xl bg-gradient-to-b from-vegas-gold to-vegas-goldsoft py-4 text-lg font-bold text-black shadow-gold transition active:scale-[0.98] disabled:opacity-40"
+        >
+          {state.status === "handover" ? "Deal Next Hand" : "Start Hand"}
+          {dealtCount < 2 && " (need 2 players)"}
+        </button>
+      </div>
+    );
+  }
 
   if (!me) {
     return (
@@ -62,13 +109,14 @@ export default function BetControls({ state, myId, isHost, dispatch }: BetContro
   const trayAmount = Math.max(0, pending - me.committed);
   const isAllInRaise = pending >= la.maxRaiseTo;
   const isOpenBet = state.currentBet === 0; // no bet yet -> "Bet" rather than "Raise"
-  const dealtCount = state.players.filter((p) => !p.sittingOut && p.stack > 0).length;
 
-  // ---------- LOBBY / HANDOVER: host controls ----------
+  // ---------- LOBBY / HANDOVER ----------
   if (state.status === "lobby" || state.status === "handover") {
+    const iWon = state.status === "handover" && state.winners.includes(me.seat);
     return (
       <div className="flex flex-col gap-3">
         <PlayerBar me={me} dispatch={dispatch} state={state} />
+        {roomHasDealer && iWon && <FeePanel me={me} dispatch={dispatch} />}
         {isHost ? (
           <>
             <HostSettings state={state} dispatch={dispatch} />
@@ -85,62 +133,36 @@ export default function BetControls({ state, myId, isHost, dispatch }: BetContro
           <div className="rounded-2xl bg-black/50 py-3 text-center text-sm text-stone-300">
             Blinds {formatRp(state.smallBlind)}/{formatRp(state.bigBlind)} · starting chips{" "}
             {formatRp(state.buyIn)}
-            <div className="mt-1 text-stone-400">Waiting for the host to start the hand…</div>
+            <div className="mt-1 text-stone-400">
+              Waiting for the dealer to start the hand…
+            </div>
           </div>
         )}
       </div>
     );
   }
 
-  // ---------- SHOWDOWN: pick winner(s) ----------
+  // ---------- SHOWDOWN ----------
   if (state.status === "showdown") {
+    if (isHost) {
+      return (
+        <ShowdownPicker
+          state={state}
+          livePlayers={livePlayers}
+          winners={winners}
+          setWinners={setWinners}
+          dispatch={dispatch}
+        />
+      );
+    }
     return (
       <div className="flex flex-col gap-3">
         <div className="text-center text-sm font-semibold text-vegas-gold">
           Pot {formatRp(state.pot)} — who won?
         </div>
-        {isHost ? (
-          <>
-            <div className="flex flex-wrap justify-center gap-2">
-              {livePlayers.map((p) => {
-                const on = winners.includes(p.seat);
-                return (
-                  <button
-                    key={p.id}
-                    onClick={() =>
-                      setWinners((w) =>
-                        on ? w.filter((s) => s !== p.seat) : [...w, p.seat]
-                      )
-                    }
-                    className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
-                      on
-                        ? "bg-vegas-gold text-black shadow-gold"
-                        : "bg-black/50 text-stone-200"
-                    }`}
-                  >
-                    {p.name}
-                  </button>
-                );
-              })}
-            </div>
-            {winners.length > 1 && (
-              <p className="text-center text-xs text-stone-400">
-                Pot split evenly between {winners.length} players.
-              </p>
-            )}
-            <button
-              onClick={() => dispatch({ type: "AWARD", winnerSeats: winners })}
-              disabled={winners.length === 0}
-              className="w-full rounded-2xl bg-gradient-to-b from-vegas-gold to-vegas-goldsoft py-4 text-lg font-bold text-black shadow-gold transition active:scale-[0.98] disabled:opacity-40"
-            >
-              Award Pot
-            </button>
-          </>
-        ) : (
-          <div className="rounded-2xl bg-black/50 py-4 text-center text-sm text-stone-300">
-            Waiting for the host to pick the winner…
-          </div>
-        )}
+        <div className="rounded-2xl bg-black/50 py-4 text-center text-sm text-stone-300">
+          Waiting for the dealer to pick the winner…
+        </div>
       </div>
     );
   }
@@ -277,13 +299,151 @@ export default function BetControls({ state, myId, isHost, dispatch }: BetContro
   );
 }
 
+// Showdown winner picker — shown to the dealer (online) or the acting host (local).
+function ShowdownPicker({
+  state,
+  livePlayers,
+  winners,
+  setWinners,
+  dispatch,
+}: {
+  state: GameState;
+  livePlayers: Player[];
+  winners: number[];
+  setWinners: (fn: (w: number[]) => number[]) => void;
+  dispatch: (action: Action) => void | Promise<void>;
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="text-center text-sm font-semibold text-vegas-gold">
+        Pot {formatRp(state.pot)} — who won?
+      </div>
+      <div className="flex flex-wrap justify-center gap-2">
+        {livePlayers.map((p) => {
+          const on = winners.includes(p.seat);
+          return (
+            <button
+              key={p.id}
+              onClick={() =>
+                setWinners((w) =>
+                  on ? w.filter((s) => s !== p.seat) : [...w, p.seat]
+                )
+              }
+              className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                on ? "bg-vegas-gold text-black shadow-gold" : "bg-black/50 text-stone-200"
+              }`}
+            >
+              {p.name}
+            </button>
+          );
+        })}
+      </div>
+      {winners.length > 1 && (
+        <p className="text-center text-xs text-stone-400">
+          Pot split evenly between {winners.length} players.
+        </p>
+      )}
+      <button
+        onClick={() => dispatch({ type: "AWARD", winnerSeats: winners })}
+        disabled={winners.length === 0}
+        className="w-full rounded-2xl bg-gradient-to-b from-vegas-gold to-vegas-goldsoft py-4 text-lg font-bold text-black shadow-gold transition active:scale-[0.98] disabled:opacity-40"
+      >
+        Award Pot
+      </button>
+    </div>
+  );
+}
+
+// Shown to a winner after a hand: tip the dealer any amount (optional).
+function FeePanel({
+  me,
+  dispatch,
+}: {
+  me: Player;
+  dispatch: (action: Action) => void | Promise<void>;
+}) {
+  const [amount, setAmount] = useState(0);
+
+  const add = (v: number) => {
+    setAmount((a) => {
+      const next = Math.min(me.stack, a + v);
+      if (next !== a) chipFeedback();
+      return next;
+    });
+  };
+
+  return (
+    <div className="rounded-2xl border border-vegas-gold/30 bg-black/45 p-3">
+      <div className="text-center text-sm font-semibold text-vegas-gold">
+        🎉 You won! Tip the dealer? (optional)
+      </div>
+      <div className="my-1 text-center text-2xl font-bold text-vegas-gold tabular-nums leading-none">
+        {formatRp(amount)}
+      </div>
+      <div className="mb-2 flex flex-wrap justify-center gap-1.5">
+        {CHIP_DEFS.filter((d) => d.value <= me.stack).map((d) => (
+          <motion.button
+            key={d.value}
+            whileTap={{ scale: 0.86 }}
+            onClick={() => add(d.value)}
+            disabled={amount >= me.stack}
+            className="disabled:opacity-30"
+            aria-label={`Add ${formatShort(d.value)}`}
+          >
+            <Chip def={d} size={34} />
+          </motion.button>
+        ))}
+      </div>
+      <div className="flex gap-2">
+        <button
+          onClick={() => setAmount(0)}
+          className="rounded-xl bg-white/10 px-3 py-2.5 text-sm font-semibold text-stone-200 active:scale-95"
+        >
+          Reset
+        </button>
+        <button
+          onClick={() => {
+            if (amount <= 0) return;
+            void dispatch({ type: "PAY_FEE", playerId: me.id, amount });
+            setAmount(0);
+          }}
+          disabled={amount <= 0}
+          className="flex-1 rounded-xl bg-gradient-to-b from-vegas-gold to-vegas-goldsoft py-2.5 text-sm font-bold text-black shadow-gold transition active:scale-[0.98] disabled:opacity-40"
+        >
+          Give Fee {amount > 0 ? formatShort(amount) : ""}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// The dealer's own status bar: they don't play, and this tracks tips received.
+function DealerBar({ state }: { state: GameState }) {
+  return (
+    <div className="flex items-center justify-between rounded-2xl bg-black/45 px-4 py-2.5">
+      <div>
+        <div className="text-[11px] uppercase tracking-widest text-stone-400">Dealer</div>
+        <div className="text-sm font-semibold text-stone-100">
+          You run the table · you don&apos;t play
+        </div>
+      </div>
+      <div className="text-right">
+        <div className="text-[11px] uppercase tracking-widest text-stone-400">Fees</div>
+        <div className="text-xl font-bold text-vegas-gold tabular-nums leading-none">
+          {formatRp(state.feeCollected)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Small bar shown between hands: stack + quick top-up.
 function PlayerBar({
   me,
   state,
   dispatch,
 }: {
-  me: GameState["players"][number];
+  me: Player;
   state: GameState;
   dispatch: (action: Action) => void | Promise<void>;
 }) {

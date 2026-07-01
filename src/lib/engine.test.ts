@@ -168,3 +168,28 @@ test("next hand rotates the dealer button", () => {
   s = reduce(s, { type: "NEXT_HAND" });
   assert.equal(s.dealerSeat, 1);
 });
+
+test("a winner can tip the non-playing dealer after a hand", () => {
+  // hostId "host" is not among the seated players -> a real dealer.
+  let s = reduce(withPlayers(2), { type: "START_HAND" });
+  assert.equal(
+    s.players.some((p) => p.id === s.hostId),
+    false
+  );
+  s = reduce(s, { type: "ALL_IN", playerId: "p0" });
+  s = reduce(s, { type: "CALL", playerId: "p1" });
+  s = reduce(s, { type: "AWARD", winnerSeats: [1] }); // seat 1 wins the pot
+  assert.equal(s.status, "handover");
+
+  const before = seat(s, 1).stack;
+  s = reduce(s, { type: "PAY_FEE", playerId: "p1", amount: 5000 });
+  assert.equal(s.feeCollected, 5000);
+  assert.equal(seat(s, 1).stack, before - 5000);
+
+  // Can't tip more than you hold.
+  let v = s.version;
+  assert.equal(reduce(s, { type: "PAY_FEE", playerId: "p1", amount: 9e9 }).version, v);
+  // A non-winner can't tip.
+  v = s.version;
+  assert.equal(reduce(s, { type: "PAY_FEE", playerId: "p0", amount: 100 }).version, v);
+});

@@ -8,9 +8,13 @@ import { formatRp } from "@/lib/format";
 export default function Scoreboard({
   players,
   onClose,
+  dealerName,
+  feeCollected = 0,
 }: {
   players: Player[];
   onClose: () => void;
+  dealerName?: string | null;
+  feeCollected?: number;
 }) {
   const rows = [...players].sort(
     (a, b) => b.stack - b.buyInTotal - (a.stack - a.buyInTotal)
@@ -66,6 +70,17 @@ export default function Scoreboard({
             );
           })}
         </div>
+
+        {feeCollected > 0 && (
+          <div className="mt-3 flex items-center justify-between rounded-xl bg-black/40 px-3 py-2 text-sm">
+            <span className="text-stone-300">
+              👑 Dealer{dealerName ? ` (${dealerName})` : ""} fees
+            </span>
+            <span className="font-bold tabular-nums text-vegas-gold">
+              {formatRp(feeCollected)}
+            </span>
+          </div>
+        )}
 
         <p className="mt-3 text-[11px] text-stone-500">
           Net = current chips − total buy-ins (buy-in &amp; top-up). Positive = profit.
